@@ -33,10 +33,10 @@ rpm = [
     for prefix in nonempty_procap_prefixes
 ]
 bw = [
-    os.path.join(DATADIR, "procap/bigwig/hg38/%s.pl.bw" % prefix)
+    os.path.join(DATADIR, "procap/bigwig/%s.pl.bw" % prefix)
     for prefix in nonempty_procap_prefixes
 ] + [
-    os.path.join(DATADIR, "procap/bigwig/hg38/%s.mn.bw" % prefix)
+    os.path.join(DATADIR, "procap/bigwig/%s.mn.bw" % prefix)
     for prefix in nonempty_procap_prefixes
 ]
 
@@ -127,9 +127,9 @@ rule procap_hg38_bw:
         chain=os.path.join(REFDIR, "hg38/hg19ToHg38.over.chain.gz"),
         bw=os.path.join(WORKDIR, "procap/bigwig/{prefix}.{pm}.bigWig"),
     params:
-        os.path.join(DATADIR, "procap/bigwig/hg38/{prefix}.{pm}"),
+        os.path.join(DATADIR, "procap/bigwig/{prefix}.{pm}"),
     output:
-        os.path.join(DATADIR, "procap/bigwig/hg38/{prefix}.{pm}.bw"),
+        os.path.join(DATADIR, "procap/bigwig/{prefix}.{pm}.bw"),
     resources:
         load=10,
     shell:
