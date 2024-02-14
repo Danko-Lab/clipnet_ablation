@@ -35,8 +35,9 @@ output = expand(
     fold=range(FOLDS),
 )
 individuals = expand(
-    os.path.join(DATADIR, "sequence/windows/full_header/{prefix}.fna.gz"),
+    os.path.join(DATADIR, "sequence/windows/folds/{prefix}_{fold}.fna.gz"),
     prefix=nonempty_procap_prefixes,
+    fold=range(FOLDS),
 )
 
 
@@ -147,15 +148,6 @@ rule add_individual_id_to_header:
         """
 
 
-rule copy_to_storage:
-    input:
-        os.path.join(WORKDIR, "sequence/windows/full_header/{prefix}.fna.gz"),
-    output:
-        os.path.join(DATADIR, "sequence/windows/{prefix}.fna.gz"),
-    shell:
-        "cp {input} {output}"
-
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Split sequence files into folds
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -170,7 +162,7 @@ rule split_sequence:
         fold_assignments=fold_assignments,
         fold="{fold}",
     output:
-        fna=os.path.join(DATADIR, "sequence/windows/folds/{prefix}_{fold}.fna.gz"),
+        fna=os.path.join(DATADIR, "sequence/windows/{prefix}_{fold}.fna.gz"),
     run:
         from Bio import SeqIO, bgzf
         import gzip
