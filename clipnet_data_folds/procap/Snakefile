@@ -26,7 +26,7 @@ nonempty_procap_prefixes = [
 ]
 
 output = expand(
-    os.path.join(DATADIR, "final_data_folds/concat_procap_{fold}.npz"),
+    os.path.join(DATADIR, "procap/individual_windows/{prefix}.{pm}.{fold}.csv.gz"),
     fold=range(FOLDS),
 )
 
@@ -119,7 +119,7 @@ rule procap_split_signal:
     resources:
         load=1,
     output:
-        fold=os.path.join(WORKDIR, "procap/windows/signal/{prefix}.{pm}.{fold}.csv.gz"),
+        fold=os.path.join(DATADIR, "procap/windows/signal/{prefix}.{pm}.{fold}.csv.gz"),
     run:
         import pandas as pd
 
@@ -134,72 +134,3 @@ rule procap_split_signal:
             [data.loc[idx] for idx in data.index if idx.split(":")[0] in chroms]
         )
         fold.to_csv(output[0], header=False, index=True, compression="gzip")
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Concatenate data between individuals
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-rule procap_concat:
-    input:
-        [
-            os.path.join(WORKDIR, "procap/windows/signal/%s.{pm}.{fold}.csv.gz")
-            % prefix
-            for prefix in nonempty_procap_prefixes
-        ],
-    resources:
-        load=1,
-    output:
-        os.path.join(WORKDIR, "procap/concat/concat_{pm}_{fold}.csv.gz"),
-    shell:
-        "zcat {input} | gzip > {output}"
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Replace window coords with index #
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-rule procap_idx_csv:
-    input:
-        os.path.join(WORKDIR, "procap/concat/concat_{pm}_{fold}.csv.gz"),
-    resources:
-        load=1,
-    output:
-        os.path.join(WORKDIR, "procap/concat/idx/concat_{pm}_{fold}.csv.gz"),
-    shell:
-        "zcat {input} | bash ../../data_processing_scripts/idx_csv.sh | gzip > {output}"
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Join pl and mn strand signal
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-rule procap_join_strands:
-    input:
-        pl=os.path.join(WORKDIR, "procap/concat/concat_pl_{fold}.csv.gz"),
-        mn=os.path.join(WORKDIR, "procap/concat/concat_mn_{fold}.csv.gz"),
-    resources:
-        load=25,
-    output:
-        os.path.join(WORKDIR, "procap/final/concat_procap_{fold}.npz"),
-    shell:
-        "python ../../data_processing_scripts/join_signal.py {input} --in_csv {output}"
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Clean up scratch space
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-rule procap_move_back:
-    input:
-        os.path.join(WORKDIR, "procap/final/concat_procap_{tail}.npz"),
-    resources:
-        load=1,
-    output:
-        os.path.join(DATADIR, "final_data_folds/concat_procap_{tail}.npz"),
-    shell:
-        "cp {input} {output}"
