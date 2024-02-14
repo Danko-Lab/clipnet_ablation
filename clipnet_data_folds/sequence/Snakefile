@@ -120,17 +120,6 @@ rule get_sequence_windows:
         """
 
 
-rule gzip_sequence_windows:
-    input:
-        os.path.join(WORKDIR, "sequence/windows/{prefix}.fna"),
-    resources:
-        load=1,
-    output:
-        os.path.join(WORKDIR, "sequence/windows/{prefix}.fna.gz"),
-    shell:
-        "bgzip {input}"
-
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add individual ids to header
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -138,7 +127,7 @@ rule gzip_sequence_windows:
 
 rule add_individual_id_to_header:
     input:
-        os.path.join(WORKDIR, "sequence/windows/{prefix}.fna.gz"),
+        os.path.join(WORKDIR, "sequence/windows/{prefix}.fna"),
     output:
         os.path.join(WORKDIR, "sequence/windows/full_header/{prefix}.fna.gz"),
     shell:
