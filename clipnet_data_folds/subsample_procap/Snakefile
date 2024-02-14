@@ -68,22 +68,6 @@ rule procap_concat:
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Replace window coords with index #
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-rule procap_idx_csv:
-    input:
-        os.path.join(WORKDIR, "procap_subsample/concat/concat_{pm}_{fold}.csv.gz"),
-    resources:
-        load=1,
-    output:
-        os.path.join(WORKDIR, "procap_subsample/concat/idx/concat_{pm}_{fold}.csv.gz"),
-    shell:
-        "zcat {input} | bash ../../data_processing_scripts/idx_csv.sh | gzip > {output}"
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Join pl and mn strand signal
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
