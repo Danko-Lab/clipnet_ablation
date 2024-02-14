@@ -5,7 +5,7 @@ import os
 # Define master rule (forces Snakemake to generate all missing files)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-with open("../../data_spec/lcl_proc_spec.json", "r") as f:
+with open("../../data_spec/subsampling_spec.json", "r") as f:
     dirs = json.load(f)
     WORKDIR = dirs["WORKDIR"]
     DATADIR = dirs["DATADIR"]
@@ -19,12 +19,22 @@ with open("../../data_spec/procap_to_1k_genomes.json", "r") as handle:
 with open("../../data_spec/missing_1k_genomes.txt", "r") as handle:
     missing = handle.read().splitlines()
 
+
+####### TODO:
+# This section should be rewritten so that it can read in a bunch of random
+# subsamples from a file, say `subsample_prefixes_n5_run0.txt`, then rename the
+# output directory to `subsample_data_folds_n5_run0` and then run the rest of the
+# pipeline.
+
+subsample_prefixes = ["?", "??", "???", "????", "?????"]
+run_directory = os.path.join(OUTDIR, "subsample_data_folds_n5_run0")
+
 output = expand(
-    os.path.join(OUTDIR, "subsample_data_folds/concat_procap_{fold}.npz"),
+    os.path.join(run_directory, "concat_procap_{fold}.npz"),
     fold=range(FOLDS),
 )
 
-subsample_prefixes = ["?", "??", "???", "????", "?????"]
+####### /TODO
 
 
 rule procap_all:  # A master rule that ensures all the other rules run
@@ -101,6 +111,6 @@ rule procap_move_back:
     resources:
         load=1,
     output:
-        os.path.join(OUTDIR, "subsample_data_folds/concat_procap_{tail}.npz"),
+        os.path.join(run_directory, "concat_procap_{tail}.npz"),
     shell:
         "cp {input} {output}"

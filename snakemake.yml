@@ -1,0 +1,22 @@
+name: snakemake
+channels:
+  - anaconda
+  - bioconda
+  - conda-forge
+dependencies:
+  - biopython
+  - cython
+  - joblib
+  - numpy
+  - pandas
+  - pip
+  - python
+  - pybedtools
+  - pyfastx
+  - pypints
+  - pysam
+  - scipy
+  - scikit-learn
+  - snakemake
+  - statsmodels
+  - ucsc-bedgraphtobigwig
