@@ -25,7 +25,7 @@ with open(missing_fp, "r") as handle:
 subsample_prefixes = ["?", "??", "???", "????", "?????"]
 
 output = expand(
-    os.path.join(DATADIR, "final_data_folds/concat_sequence_{fold}.npz"),
+    os.path.join(DATADIR, "subsample_data_folds/concat_sequence_{fold}.npz"),
     fold=range(FOLDS),
 )
 
