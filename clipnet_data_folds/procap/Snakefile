@@ -27,6 +27,8 @@ nonempty_procap_prefixes = [
 
 output = expand(
     os.path.join(DATADIR, "procap/individual_windows/{prefix}.{pm}.{fold}.csv.gz"),
+    prefix=nonempty_procap_prefixes,
+    pm=["pl", "mn"],
     fold=range(FOLDS),
 )
 
