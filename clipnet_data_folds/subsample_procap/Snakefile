@@ -1,0 +1,107 @@
+import json
+import os
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Define master rule (forces Snakemake to generate all missing files)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+with open("../../data_spec/lcl_proc_spec.json", "r") as f:
+    dirs = json.load(f)
+    WORKDIR = dirs["WORKDIR"]
+    DATADIR = dirs["DATADIR"]
+    RAWDIR = dirs["RAWDIR"]
+    REFDIR = dirs["REFDIR"]
+    FOLDS = 10
+
+fold_assignments = "../data_fold_assignments.csv"
+
+with open("../../data_spec/procap_to_1k_genomes.json", "r") as handle:
+    prefix_converter = json.load(handle)
+with open("../../data_spec/missing_1k_genomes.txt", "r") as handle:
+    missing = handle.read().splitlines()
+
+output = expand(
+    os.path.join(DATADIR, "subsample_data_folds/concat_5_procap_{fold}.npz"),
+    fold=range(FOLDS),
+)
+
+subsample_prefixes = ["?", "??", "???", "????", "?????"]
+
+
+rule procap_all:  # A master rule that ensures all the other rules run
+    input:
+        output,
+    params:
+        os.path.join(WORKDIR, "procap_subsample"),
+    shell:
+        "echo rm -r {params}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Concatenate data between individuals
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_concat:
+    input:
+        [
+            os.path.join(
+                DATADIR, "procap/individual_windows/%s.{pm}.{fold}.csv.gz" % prefix
+            )
+            for prefix in subsample_prefixes
+        ],
+    resources:
+        load=1,
+    output:
+        os.path.join(WORKDIR, "procap_subsample/concat/concat_{pm}_{fold}.csv.gz"),
+    shell:
+        "zcat {input} | gzip > {output}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Replace window coords with index #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_idx_csv:
+    input:
+        os.path.join(WORKDIR, "procap_subsample/concat/concat_{pm}_{fold}.csv.gz"),
+    resources:
+        load=1,
+    output:
+        os.path.join(WORKDIR, "procap_subsample/concat/idx/concat_{pm}_{fold}.csv.gz"),
+    shell:
+        "zcat {input} | bash ../../data_processing_scripts/idx_csv.sh | gzip > {output}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Join pl and mn strand signal
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_join_strands:
+    input:
+        pl=os.path.join(WORKDIR, "procap_subsample/concat/concat_pl_{fold}.csv.gz"),
+        mn=os.path.join(WORKDIR, "procap_subsample/concat/concat_mn_{fold}.csv.gz"),
+    resources:
+        load=25,
+    output:
+        os.path.join(WORKDIR, "procap_subsample/final/concat_procap_{fold}.npz"),
+    shell:
+        "python ../../data_processing_scripts/join_signal.py {input} --in_csv {output}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Clean up scratch space
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_move_back:
+    input:
+        os.path.join(WORKDIR, "procap_subsample/final/concat_procap_{tail}.npz"),
+    resources:
+        load=1,
+    output:
+        os.path.join(DATADIR, "subsample_data_folds/concat_5_procap_{tail}.npz"),
+    shell:
+        "cp {input} {output}"

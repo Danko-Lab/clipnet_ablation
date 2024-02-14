@@ -1,0 +1,86 @@
+import json
+import os
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Define master rule (forces Snakemake to generate all missing files)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+with open("../../data_spec/lcl_proc_spec.json", "r") as f:
+    dirs = json.load(f)
+    WORKDIR = dirs["WORKDIR"]
+    REFDIR = dirs["REFDIR"]
+    DATADIR = dirs["DATADIR"]
+    FOLDS = 10
+
+fold_assignments = "../data_fold_assignments.csv"
+
+# A dictionary that contains a hash procap : sequence prefixes
+file_prefix_hash_fp = "../../data_spec/procap_to_1k_genomes.json"
+with open(file_prefix_hash_fp, "r") as handle:
+    prefix_converter = json.load(handle)
+missing_fp = "../../data_spec/missing_1k_genomes.txt"
+with open(missing_fp, "r") as handle:
+    missing = handle.read().splitlines()
+
+subsample_prefixes = ["?", "??", "???", "????", "?????"]
+
+output = expand(
+    os.path.join(DATADIR, "final_data_folds/concat_sequence_{fold}.npz"),
+    fold=range(FOLDS),
+)
+
+
+rule sequence_all:  # A master rule that ensures all the other rules run
+    input:
+        output,
+    params:
+        os.path.join(WORKDIR, "sequence"),
+    shell:
+        "rm -r {params}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Concatenate folds across individuals
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule concat_seq:
+    input:
+        [
+            os.path.join(DATADIR, "sequence/windows/folds/%s_{fold}.fna.gz") % prefix
+            for prefix in subsample_prefixes
+        ],
+    resources:
+        load=25,
+    output:
+        npz=os.path.join(
+            WORKDIR, "sequence_subsample/concat/concat_sequence_{fold}.npz"
+        ),
+    run:
+        import numpy as np
+        import sys
+
+        sys.path.append("../../data_processing_scripts/")
+        import utils
+
+        seq_array = np.concatenate(
+            [utils.get_onehot_fasta_sequences(fasta_fp, cores=1) for fasta_fp in input],
+            axis=0,
+        )
+        np.savez_compressed(output.npz, seq_array)
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Clean up scratch space
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule cp_data:
+    input:
+        os.path.join(WORKDIR, "sequence_subsample/concat/concat_sequence_{fold}.npz"),
+    resources:
+        load=1,
+    output:
+        os.path.join(DATADIR, "subsample_data_folds/concat_sequence_{fold}.npz"),
+    shell:
+        "cp {input} {output}"
