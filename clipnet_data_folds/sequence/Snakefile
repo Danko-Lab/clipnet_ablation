@@ -1,0 +1,225 @@
+import json
+import os
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Define master rule (forces Snakemake to generate all missing files)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+with open("../../data_spec/lcl_proc_spec.json", "r") as f:
+    dirs = json.load(f)
+    WORKDIR = dirs["WORKDIR"]
+    REFDIR = dirs["REFDIR"]
+    DATADIR = dirs["DATADIR"]
+    FOLDS = 10
+
+fold_assignments = "../data_fold_assignments.csv"
+
+# A dictionary that contains a hash procap : sequence prefixes
+file_prefix_hash_fp = "../../data_spec/procap_to_1k_genomes.json"
+with open(file_prefix_hash_fp, "r") as handle:
+    prefix_converter = json.load(handle)
+missing_fp = "../../data_spec/missing_1k_genomes.txt"
+with open(missing_fp, "r") as handle:
+    missing = handle.read().splitlines()
+nonempty_seq_prefixes = [
+    prefix for prefix in prefix_converter.values() if prefix not in missing
+]
+nonempty_procap_prefixes = [
+    prefix
+    for prefix in prefix_converter.keys()
+    if prefix_converter[prefix] not in missing
+]
+
+output = expand(
+    os.path.join(DATADIR, "final_data_folds/concat_sequence_{fold}.npz"),
+    fold=range(FOLDS),
+)
+
+
+rule sequence_all:  # A master rule that ensures all the other rules run
+    input:
+        output,
+    params:
+        os.path.join(WORKDIR, "sequence"),
+    shell:
+        "rm -r {params}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Unpack consensus sequences
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule unpack_consensus_sequences:
+    input:
+        os.path.join(DATADIR, "sequence/consensus/{prefix}.fna.gz"),
+    resources:
+        load=1,
+    output:
+        os.path.join(WORKDIR, "sequence/consensus/{prefix}.fna.gz"),
+    shell:
+        """
+        cp {input} {output}
+        pyfastx index {output}
+        """
+
+
+rule unpack_procap_windows:
+    input:
+        os.path.join(DATADIR, "procap/windows/{prefix}_window_uniq.bed.gz"),
+    resources:
+        load=1,
+    output:
+        os.path.join(WORKDIR, "sequence/procap/{prefix}_window_uniq.bed"),
+    shell:
+        "zcat {input} > {output}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Get sequence windows
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule get_sequence_windows:
+    input:
+        fa=[
+            os.path.join(WORKDIR, "sequence/consensus/%s.fna.gz" % prefix)
+            for prefix in nonempty_seq_prefixes
+        ],
+        windows=[
+            os.path.join(WORKDIR, "sequence/procap/%s_window_uniq.bed" % prefix)
+            for prefix in nonempty_procap_prefixes
+        ],
+    params:
+        bed_dir=os.path.join(WORKDIR, "sequence/procap"),
+        fa_dir=os.path.join(WORKDIR, "sequence/consensus"),
+        out_dir=os.path.join(WORKDIR, "sequence/windows"),
+        file_prefix_hash_fp=file_prefix_hash_fp,
+        missing_fp=missing_fp,
+    resources:
+        load=100,
+    output:
+        [
+            os.path.join(WORKDIR, "sequence/windows/%s.fna") % prefix
+            for prefix in nonempty_procap_prefixes
+        ],
+    shell:
+        """
+        python ../../data_processing_scripts/get_sequence_windows.py \
+            {params.bed_dir} \
+            {params.fa_dir} \
+            {params.out_dir} \
+            {params.file_prefix_hash_fp} \
+            --missing {params.missing_fp}
+        """
+
+
+rule gzip_sequence_windows:
+    input:
+        os.path.join(WORKDIR, "sequence/windows/{prefix}.fna"),
+    resources:
+        load=1,
+    output:
+        os.path.join(WORKDIR, "sequence/windows/{prefix}.fna.gz"),
+    shell:
+        "bgzip {input}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Add individual ids to header
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule add_individual_id_to_header:
+    input:
+        os.path.join(WORKDIR, "sequence/windows/{prefix}.fna.gz"),
+    output:
+        os.path.join(WORKDIR, "sequence/windows/full_header/{prefix}.fna.gz"),
+    shell:
+        """
+        python ../../data_processing_scripts/add_individual_to_fna_header.py \
+            {input} | bgzip > {output}
+        """
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Split sequence files into folds
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule split_sequence:
+    input:
+        fna=os.path.join(WORKDIR, "sequence/windows/full_header/{prefix}.fna.gz"),
+    resources:
+        load=1,
+    params:
+        fold_assignments=fold_assignments,
+        fold="{fold}",
+    output:
+        fna=os.path.join(WORKDIR, "sequence/windows/folds/{prefix}_{fold}.fna.gz"),
+    run:
+        from Bio import SeqIO, bgzf
+        import gzip
+        import pandas as pd
+
+        fold_assignments = pd.read_csv(
+            params.fold_assignments, header=0, index_col=None
+        )
+        chroms = list(
+            fold_assignments[fold_assignments["fold"] == int(params.fold)].chrom
+        )
+
+        recs = []
+        with gzip.open(input.fna, "rt") as f:
+            for rec in SeqIO.parse(f, "fasta"):
+                chrom = rec.id.split(":")[0].split("_")[-1]
+                if chrom in chroms:
+                    recs.append(rec)
+
+        with bgzf.BgzfWriter(output.fna, "wb") as out:
+            SeqIO.write(recs, out, "fasta")
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Concatenate folds across individuals
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule concat_seq:
+    input:
+        [
+            os.path.join(WORKDIR, "sequence/windows/folds/%s_{fold}.fna.gz") % prefix
+            for prefix in nonempty_procap_prefixes
+        ],
+    resources:
+        load=25,
+    output:
+        npz=os.path.join(WORKDIR, "sequence/concat/concat_sequence_{fold}.npz"),
+    run:
+        import numpy as np
+        import sys
+
+        sys.path.append("../../clipnet/")
+        import utils
+
+        seq_array = np.concatenate(
+            [utils.get_onehot_fasta_sequences(fasta_fp, cores=1) for fasta_fp in input],
+            axis=0,
+        )
+        np.savez_compressed(output.npz, seq_array)
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Clean up scratch space
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule cp_data:
+    input:
+        os.path.join(WORKDIR, "sequence/concat/concat_sequence_{fold}.npz"),
+    resources:
+        load=1,
+    output:
+        os.path.join(DATADIR, "final_data_folds/concat_sequence_{fold}.npz"),
+    shell:
+        "cp {input} {output}"

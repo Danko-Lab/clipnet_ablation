@@ -1,0 +1,221 @@
+import json
+import os
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Define master rule (forces Snakemake to generate all missing files)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+with open("../../data_spec/lcl_proc_spec.json", "r") as f:
+    dirs = json.load(f)
+    WORKDIR = dirs["WORKDIR"]
+    RAWDIR = dirs["RAWDIR"]
+    REFDIR = dirs["REFDIR"]
+    DATADIR = dirs["DATADIR"]
+
+with open("../../data_spec/procap_to_1k_genomes.json", "r") as handle:
+    prefix_converter = json.load(handle)
+with open("../../data_spec/missing_1k_genomes.txt", "r") as handle:
+    missing = handle.read().splitlines()
+nonempty_procap_prefixes = [
+    prefix
+    for prefix in prefix_converter.keys()
+    if prefix_converter[prefix] not in missing
+]
+
+bw_pl = expand(
+    os.path.join(WORKDIR, "procap/bigwig/{p}.pl_cleaned.bigWig"),
+    p=nonempty_procap_prefixes,
+)
+bw_mn = expand(
+    os.path.join(WORKDIR, "procap/bigwig/{p}.mn_cleaned.bigWig"),
+    p=nonempty_procap_prefixes,
+)
+bedgraph_pl = expand(
+    os.path.join(WORKDIR, "procap/bedgraph/cleaned/{p}.pl_cleaned.bedgraph.gz"),
+    p=nonempty_procap_prefixes,
+)
+bedgraph_mn = expand(
+    os.path.join(WORKDIR, "procap/bedgraph/cleaned/{p}.mn_cleaned.bedgraph.gz"),
+    p=nonempty_procap_prefixes,
+)
+
+narrow = expand(
+    os.path.join(DATADIR, "procap/peaks/hg38/{p}_narrowPeak.bed.gz"),
+    p=nonempty_procap_prefixes,
+)
+paired = expand(
+    os.path.join(DATADIR, "procap/peaks/hg38/{p}_pairedPeak.bed.gz"),
+    p=nonempty_procap_prefixes,
+)
+
+
+rule peaks_all:  # A master rule that ensures all the other rules run
+    input:
+        narrow + paired,
+    params:
+        os.path.join(WORKDIR, "procap/peaks"),
+        os.path.join(WORKDIR, "procap/bigwig"),
+        os.path.join(WORKDIR, "procap/bedgraph"),
+    shell:
+        "rm -r {params}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Remove weird chromosomes
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule peaks_remove_weird_chr:
+    input:
+        os.path.join(RAWDIR, "procap/{prefix}.bedgraph.gz"),
+    params:
+        os.path.join(WORKDIR, "procap/bedgraph/{prefix}_cleaned.bedgraph"),
+    output:
+        os.path.join(WORKDIR, "procap/bedgraph/{prefix}_cleaned.bedgraph.gz"),
+    shell:
+        """
+        zcat {input} | \
+        sed -e '/chrMT/d' \
+            -e '/chrGL*/d' \
+            -e '/chrNC*/d' \
+            -e '/chrhs37d5/d' \
+            -e '/chrX/d' \
+            -e '/chrY/d' \
+            > {params}
+        bgzip {params}
+        """
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Convert to bigWig
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_bg2bw_raw:
+    input:
+        os.path.join(WORKDIR, "procap/bedgraph/{prefix}_cleaned.bedgraph.gz"),
+    params:
+        os.path.join(WORKDIR, "procap/bedgraph/{prefix}_cleaned.bedgraph"),
+        os.path.join(REFDIR, "hg19/hg19.chrom.sizes"),
+    resources:
+        load=1,
+    output:
+        os.path.join(WORKDIR, "procap/bigwig/{prefix}_cleaned.bigWig"),
+    shell:
+        """
+        gunzip {input}
+        bedGraphToBigWig {params} {output}
+        bgzip {params[0]}
+        """
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Get peaks
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule run_PINTS:
+    input:
+        pl=os.path.join(WORKDIR, "procap/bigwig/{prefix}.pl_cleaned.bigWig"),
+        mn=os.path.join(WORKDIR, "procap/bigwig/{prefix}.mn_cleaned.bigWig"),
+    params:
+        output_dir=os.path.join(WORKDIR, "procap/peaks"),
+        output_prefix="{prefix}",
+    resources:
+        load=5,
+    output:
+        os.path.join(WORKDIR, "procap/peaks/{prefix}_narrowPeak.bed"),
+    shell:
+        """
+        python ../../data_processing_scripts/PINTS-master/caller_rev2.py bigwig \
+            {params} \
+            --bw-pl {input.pl} \
+            --bw-mn {input.mn}
+        """
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Convert peak files to hg38
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule convert_peaks_hg38:
+    input:
+        chain=os.path.join(REFDIR, "hg38/hg19ToHg38.over.chain.gz"),
+        bidirectional=os.path.join(WORKDIR, "procap/peaks/{prefix}_narrowPeak.bed"),
+    resources:
+        load=7,
+    output:
+        bidirectional=os.path.join(WORKDIR, "procap/peaks/hg38/{prefix}_narrowPeak.bed"),
+    shell:
+        "CrossMap.py bed {input} {output}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Filter for TSS pairs
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule split_plmn:
+    input:
+        os.path.join(WORKDIR, "procap/peaks/hg38/{prefix}_narrowPeak.bed"),
+    output:
+        pl=os.path.join(WORKDIR, "procap/peaks/hg38/{prefix}_narrowPeak_pl.bed"),
+        mn=os.path.join(WORKDIR, "procap/peaks/hg38/{prefix}_narrowPeak_mn.bed"),
+    shell:
+        """
+        grep "+" {input} > {output.pl}
+        grep "-" {input} > {output.mn}
+        """
+
+
+rule get_divergent_pairs:
+    input:
+        pl=os.path.join(WORKDIR, "procap/peaks/hg38/{prefix}_narrowPeak_pl.bed"),
+        mn=os.path.join(WORKDIR, "procap/peaks/hg38/{prefix}_narrowPeak_mn.bed"),
+    output:
+        os.path.join(WORKDIR, "procap/peaks/hg38/{prefix}_pairedPeak.bed"),
+    shell:
+        "python ../../data_processing_scripts/get_divergent_pairs.py {input} > {output}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Clean up scratch space
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule gzip_peaks:
+    input:
+        narrowPeak=os.path.join(WORKDIR, "procap/peaks/hg38/{prefix}_narrowPeak.bed"),
+        bidirectional=os.path.join(WORKDIR, "procap/peaks/hg38/{prefix}_pairedPeak.bed"),
+    resources:
+        load=1,
+    output:
+        narrowPeak=os.path.join(WORKDIR, "procap/peaks/hg38/{prefix}_narrowPeak.bed.gz"),
+        bidirectional=os.path.join(
+            WORKDIR, "procap/peaks/hg38/{prefix}_pairedPeak.bed.gz"
+        ),
+    shell:
+        "for f in {input}; do bgzip $f; done"
+
+
+rule peaks_move_back:
+    input:
+        narrowPeak=os.path.join(WORKDIR, "procap/peaks/hg38/{prefix}_narrowPeak.bed.gz"),
+        bidirectional=os.path.join(
+            WORKDIR, "procap/peaks/hg38/{prefix}_pairedPeak.bed.gz"
+        ),
+    params:
+        os.path.join(DATADIR, "procap/peaks/hg38/"),
+    resources:
+        load=1,
+    output:
+        narrowPeak=os.path.join(DATADIR, "procap/peaks/hg38/{prefix}_narrowPeak.bed.gz"),
+        bidirectional=os.path.join(
+            DATADIR, "procap/peaks/hg38/{prefix}_pairedPeak.bed.gz"
+        ),
+    shell:
+        """
+        cp {input[0]} {params}
+        cp {input[1]} {params}
+        """

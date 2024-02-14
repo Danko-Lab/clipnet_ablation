@@ -1,0 +1,10 @@
+{
+    "WORKDIR": "/workdir/ayh8/data/gse110638",
+    "RAWDIR": "/fs/cbsubscb17/storage/data/gse110638/",
+    "REFDIR": "/fs/cbsubscb17/storage/data",
+    "PROJDIR": "/fs/cbsubscb17/storage/projects/CLIPNET/",
+    "DATADIR": "/fs/cbsubscb17/storage/projects/CLIPNET/data/gse110638/",
+    "PREDICTDIR": "/fs/cbsubscb17/storage/projects/CLIPNET/predictions/",
+    "MODELDIR": "/fs/cbsubscb17/storage/projects/CLIPNET/lcl_models/",
+    "CHUNKS": 12
+}

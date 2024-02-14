@@ -1,0 +1,67 @@
+import json
+import os
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Define master rule (forces Snakemake to generate all missing files)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+with open("../../data_spec/lcl_proc_spec.json", "r") as f:
+    dirs = json.load(f)
+    RAWDIR = dirs["RAWDIR"]
+
+with open("../../data_spec/procap_file_prefixes.txt", "r") as f:
+    procap = expand(
+        os.path.join(RAWDIR, "procap/{prefix}.hs37d5.bwa.uniqueUMI.{side}.bedgraph.gz"),
+        prefix=f.read().splitlines(),
+        side=["pl", "mn"],
+    )
+with open("../../data_spec/procap_to_1k_genomes.json", "r") as f:
+    dnase = expand(
+        os.path.join(RAWDIR, "dnase/{prefix}.qnorm.bed.gz"),
+        prefix=set(json.load(f).values()),
+    )
+variants = expand(
+    os.path.join(
+        RAWDIR,
+        "variants/ALL.chr{num}.shapeit2_integrated_snvindels_v2a_27022019.GRCh38.phased.vcf.gz",
+    ),
+    num=range(1, 22 + 1),
+)
+
+
+rule download_all:
+    input:
+        procap + dnase + variants,
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Download rules
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule download_procap:
+    params:
+        ftp="ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE110nnn/GSE110638/suppl/*",
+        outdir=os.path.join(RAWDIR, "procap"),
+    resources:
+        load=51,
+    output:
+        procap,
+    shell:
+        """
+        wget {params.ftp} -P {params.outdir}
+        tar -xvf {params.outdir}/GSE110638_RAW.tar -C {params.outdir}
+        rm {params.outdir}/GSE110638_RAW.tar
+        """
+
+
+rule download_vcf:
+    params:
+        ftp="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000_genomes_project/release/20190312_biallelic_SNV_and_INDEL/ALL*.gz",
+        outdir=os.path.join(RAWDIR, "variants"),
+    resources:
+        load=61,
+    output:
+        variants,
+    shell:
+        "wget {params.ftp} -P {params.outdir}"

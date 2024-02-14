@@ -1,0 +1,93 @@
+import json
+import os
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Define master rule (forces Snakemake to generate all missing files)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+with open("../../data_spec/lcl_proc_spec.json", "r") as f:
+    dirs = json.load(f)
+    WORKDIR = dirs["WORKDIR"]
+    DATADIR = dirs["DATADIR"]
+
+with open("../../data_spec/procap_to_1k_genomes.json", "r") as handle:
+    prefix_converter = json.load(handle)
+with open("../../data_spec/missing_1k_genomes.txt", "r") as handle:
+    missing = handle.read().splitlines()
+nonempty_procap_prefixes = [
+    prefix
+    for prefix in prefix_converter.keys()
+    if prefix_converter[prefix] not in missing
+]
+window = expand(
+    os.path.join(DATADIR, "procap/windows/{p}_window_uniq.bed.gz"),
+    p=nonempty_procap_prefixes,
+)
+
+
+rule window_all:  # A master rule that ensures all the other rules run
+    input:
+        window,
+    params:
+        os.path.join(WORKDIR, "procap/windows"),
+    shell:
+        "rm -r {params}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create random windows around peaks (consider using merged peaks)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule sample_windows:
+    input:
+        os.path.join(DATADIR, "procap/peaks/hg38/{prefix}_pairedPeak.bed.gz"),
+    params:
+        window=1000,
+        buffer=250,
+        seed=47,
+    resources:
+        load=1,
+    output:
+        os.path.join(WORKDIR, "procap/windows/{prefix}_window.bed.gz"),
+    shell:
+        """
+        python ../../data_processing_scripts/sample_windows.py \
+            {input} \
+            --window {params.window} \
+            --buffer {params.buffer} \
+            --seed {params.seed} | \
+            bgzip > {output}
+        """
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Select only uniq windows
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule uniq_windows:
+    input:
+        os.path.join(WORKDIR, "procap/windows/{prefix}_window.bed.gz"),
+    resources:
+        load=1,
+    output:
+        os.path.join(WORKDIR, "procap/windows/{prefix}_window_uniq.bed.gz"),
+    shell:
+        "zcat {input} | bedtools sort | uniq | bgzip > {output}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Clean up scratch space
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule windows_move_back:
+    input:
+        os.path.join(WORKDIR, "procap/windows/{prefix}_window_uniq.bed.gz"),
+    resources:
+        load=1,
+    output:
+        os.path.join(DATADIR, "procap/windows/{prefix}_window_uniq.bed.gz"),
+    shell:
+        "cp {input} {output}"

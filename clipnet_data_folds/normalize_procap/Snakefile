@@ -1,0 +1,146 @@
+#### THIS NEEDS TO BE UPDATED TO WORK WITH NEW PROCAP WINDOW EXTRACTION.
+
+import json
+import os
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Define master rule (forces Snakemake to generate all missing files)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+with open("../../data_spec/lcl_proc_spec.json", "r") as f:
+    dirs = json.load(f)
+    WORKDIR = dirs["WORKDIR"]
+    DATADIR = dirs["DATADIR"]
+    RAWDIR = dirs["RAWDIR"]
+    REFDIR = dirs["REFDIR"]
+    CHUNKS = 12
+
+with open("../../data_spec/procap_to_1k_genomes.json", "r") as handle:
+    prefix_converter = json.load(handle)
+with open("../../data_spec/missing_1k_genomes.txt", "r") as handle:
+    missing = handle.read().splitlines()
+nonempty_procap_prefixes = [
+    prefix
+    for prefix in prefix_converter.keys()
+    if prefix_converter[prefix] not in missing
+]
+
+rpm = [
+    os.path.join(DATADIR, "procap/bedgraph/rpm/%s.pl.bedgraph.gz" % prefix)
+    for prefix in nonempty_procap_prefixes
+] + [
+    os.path.join(DATADIR, "procap/bedgraph/rpm/%s.mn.bedgraph.gz" % prefix)
+    for prefix in nonempty_procap_prefixes
+]
+bw = [
+    os.path.join(DATADIR, "procap/bigwig/hg38/%s.pl.bw" % prefix)
+    for prefix in nonempty_procap_prefixes
+] + [
+    os.path.join(DATADIR, "procap/bigwig/hg38/%s.mn.bw" % prefix)
+    for prefix in nonempty_procap_prefixes
+]
+
+train = expand(
+    os.path.join(DATADIR, "final/concat_procap_train_{C}.npz"), C=range(CHUNKS)
+)
+val = [os.path.join(DATADIR, "final/concat_procap_val.npz")]
+test = [os.path.join(DATADIR, "final/concat_procap_test.npz")]
+
+
+rule procap_all:  # A master rule that ensures all the other rules run
+    input:
+        bw + train + val + test,
+    params:
+        os.path.join(WORKDIR, "procap/bedgraph"),
+        os.path.join(WORKDIR, "procap/bigwig"),
+        os.path.join(WORKDIR, "procap/windows"),
+        os.path.join(WORKDIR, "procap/concat"),
+        os.path.join(WORKDIR, "procap/final"),
+    shell:
+        "echo rm -r {params}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Remove weird chromosomes
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_remove_weird_chr:
+    input:
+        os.path.join(RAWDIR, "procap/{prefix}.bedgraph.gz"),
+    params:
+        os.path.join(WORKDIR, "procap/bedgraph/cleaned/{prefix}.bedgraph"),
+    output:
+        os.path.join(WORKDIR, "procap/bedgraph/cleaned/{prefix}.bedgraph.gz"),
+    shell:
+        """
+        zcat {input} | \
+        sed -e '/chrMT/d' \
+            -e '/chrGL*/d' \
+            -e '/chrNC*/d' \
+            -e '/chrhs37d5/d' \
+            -e '/chrX/d' \
+            -e '/chrY/d' \
+            > {params}
+        bgzip {params}
+        """
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Perform RPM normalization
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_normalize_bg:
+    input:
+        pl=os.path.join(WORKDIR, "procap/bedgraph/cleaned/{prefix}.pl.bedgraph.gz"),
+        mn=os.path.join(WORKDIR, "procap/bedgraph/cleaned/{prefix}.mn.bedgraph.gz"),
+    resources:
+        load=1,
+    output:
+        pl=os.path.join(WORKDIR, "procap/bedgraph/rpm/{prefix}.pl.bedgraph.gz"),
+        mn=os.path.join(WORKDIR, "procap/bedgraph/rpm/{prefix}.mn.bedgraph.gz"),
+    shell:
+        "python ../../data_processing_scripts/rpm_bedgraph.py {input} {output}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Convert bedgraph to bw
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_bg2bw_rpm:
+    input:
+        os.path.join(WORKDIR, "procap/bedgraph/rpm/{prefix}.{pm}.bedgraph.gz"),
+    params:
+        tmp=os.path.join(WORKDIR, "procap/bedgraph/rpm/{prefix}.{pm}.bedgraph"),
+        chromsizes=os.path.join(REFDIR, "hg19/hg19.chrom.sizes"),
+    resources:
+        load=1,
+    output:
+        os.path.join(WORKDIR, "procap/bigwig/{prefix}.{pm}.bigWig"),
+    shell:
+        """
+        gunzip {input}
+        bedGraphToBigWig {params} {output}
+        gzip {params.tmp}
+        """
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Convert bw files to hg38
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_hg38_bw:
+    input:
+        chain=os.path.join(REFDIR, "hg38/hg19ToHg38.over.chain.gz"),
+        bw=os.path.join(WORKDIR, "procap/bigwig/{prefix}.{pm}.bigWig"),
+    params:
+        os.path.join(WORKDIR, "procap/bigwig/hg38/{prefix}.{pm}"),
+    output:
+        os.path.join(WORKDIR, "procap/bigwig/hg38/{prefix}.{pm}.bw"),
+    resources:
+        load=10,
+    shell:
+        "CrossMap.py bigWig {input} {params}"
