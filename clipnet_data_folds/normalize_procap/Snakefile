@@ -127,7 +127,7 @@ rule procap_hg38_bw:
         chain=os.path.join(REFDIR, "hg38/hg19ToHg38.over.chain.gz"),
         bw=os.path.join(WORKDIR, "procap/bigwig/{prefix}.{pm}.bigWig"),
     params:
-        os.path.join(WORKDIR, "procap/bigwig/hg38/{prefix}.{pm}"),
+        os.path.join(DATADIR, "procap/bigwig/hg38/{prefix}.{pm}"),
     output:
         os.path.join(DATADIR, "procap/bigwig/hg38/{prefix}.{pm}.bw"),
     resources:
