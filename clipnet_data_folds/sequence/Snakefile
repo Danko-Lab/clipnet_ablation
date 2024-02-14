@@ -35,7 +35,7 @@ output = expand(
     fold=range(FOLDS),
 )
 individuals = expand(
-    os.path.join(DATADIR, "sequence/windows/folds/{prefix}_{fold}.fna.gz"),
+    os.path.join(DATADIR, "sequence/folds/{prefix}_{fold}.fna.gz"),
     prefix=nonempty_procap_prefixes,
     fold=range(FOLDS),
 )
