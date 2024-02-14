@@ -49,11 +49,11 @@ rule procap_all:  # A master rule that ensures all the other rules run
 
 rule unpack_procap:
     input:
-        os.path.join(DATADIR, "procap/bigwig/hg38/{prefix}.{pm}.bw"),
+        os.path.join(DATADIR, "procap/bigwig/{prefix}.{pm}.bw"),
     resources:
         load=1,
     output:
-        os.path.join(WORKDIR, "procap/bigwig/hg38/{prefix}.{pm}.bw"),
+        os.path.join(WORKDIR, "procap/bigwig/{prefix}.{pm}.bw"),
     shell:
         "cp {input} {output}"
 
