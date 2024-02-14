@@ -40,22 +40,12 @@ bw = [
     for prefix in nonempty_procap_prefixes
 ]
 
-train = expand(
-    os.path.join(DATADIR, "final/concat_procap_train_{C}.npz"), C=range(CHUNKS)
-)
-val = [os.path.join(DATADIR, "final/concat_procap_val.npz")]
-test = [os.path.join(DATADIR, "final/concat_procap_test.npz")]
-
 
 rule procap_all:  # A master rule that ensures all the other rules run
     input:
-        bw + train + val + test,
+        bw,
     params:
-        os.path.join(WORKDIR, "procap/bedgraph"),
-        os.path.join(WORKDIR, "procap/bigwig"),
-        os.path.join(WORKDIR, "procap/windows"),
-        os.path.join(WORKDIR, "procap/concat"),
-        os.path.join(WORKDIR, "procap/final"),
+        os.path.join(WORKDIR, "procap/"),
     shell:
         "echo rm -r {params}"
 
@@ -139,7 +129,7 @@ rule procap_hg38_bw:
     params:
         os.path.join(WORKDIR, "procap/bigwig/hg38/{prefix}.{pm}"),
     output:
-        os.path.join(WORKDIR, "procap/bigwig/hg38/{prefix}.{pm}.bw"),
+        os.path.join(DATADIR, "procap/bigwig/hg38/{prefix}.{pm}.bw"),
     resources:
         load=10,
     shell:
