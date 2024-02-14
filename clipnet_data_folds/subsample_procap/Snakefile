@@ -9,8 +9,7 @@ with open("../../data_spec/lcl_proc_spec.json", "r") as f:
     dirs = json.load(f)
     WORKDIR = dirs["WORKDIR"]
     DATADIR = dirs["DATADIR"]
-    RAWDIR = dirs["RAWDIR"]
-    REFDIR = dirs["REFDIR"]
+    OUTDIR = dirs["OUTDIR"]
     FOLDS = 10
 
 fold_assignments = "../data_fold_assignments.csv"
@@ -21,7 +20,7 @@ with open("../../data_spec/missing_1k_genomes.txt", "r") as handle:
     missing = handle.read().splitlines()
 
 output = expand(
-    os.path.join(DATADIR, "subsample_data_folds/concat_5_procap_{fold}.npz"),
+    os.path.join(OUTDIR, "subsample_data_folds/concat_procap_{fold}.npz"),
     fold=range(FOLDS),
 )
 
@@ -102,6 +101,6 @@ rule procap_move_back:
     resources:
         load=1,
     output:
-        os.path.join(DATADIR, "subsample_data_folds/concat_5_procap_{tail}.npz"),
+        os.path.join(OUTDIR, "subsample_data_folds/concat_procap_{tail}.npz"),
     shell:
         "cp {input} {output}"

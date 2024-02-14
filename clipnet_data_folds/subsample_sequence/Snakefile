@@ -8,8 +8,8 @@ import os
 with open("../../data_spec/lcl_proc_spec.json", "r") as f:
     dirs = json.load(f)
     WORKDIR = dirs["WORKDIR"]
-    REFDIR = dirs["REFDIR"]
     DATADIR = dirs["DATADIR"]
+    OUTDIR = dirs["OUTDIR"]
     FOLDS = 10
 
 fold_assignments = "../data_fold_assignments.csv"
@@ -25,7 +25,7 @@ with open(missing_fp, "r") as handle:
 subsample_prefixes = ["?", "??", "???", "????", "?????"]
 
 output = expand(
-    os.path.join(DATADIR, "subsample_data_folds/concat_sequence_{fold}.npz"),
+    os.path.join(OUTDIR, "subsample_data_folds/concat_sequence_{fold}.npz"),
     fold=range(FOLDS),
 )
 
@@ -81,6 +81,6 @@ rule cp_data:
     resources:
         load=1,
     output:
-        os.path.join(DATADIR, "subsample_data_folds/concat_sequence_{fold}.npz"),
+        os.path.join(OUTDIR, "subsample_data_folds/concat_sequence_{fold}.npz"),
     shell:
         "cp {input} {output}"
