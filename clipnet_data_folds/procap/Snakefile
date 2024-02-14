@@ -77,7 +77,7 @@ rule unpack_windows:
 rule procap_get_signal:
     input:
         windows=os.path.join(WORKDIR, "procap/windows/{prefix}_window_uniq.bed"),
-        bw=os.path.join(WORKDIR, "procap/bigwig/hg38/{prefix}.{pm}.bw"),
+        bw=os.path.join(WORKDIR, "procap/bigwig/{prefix}.{pm}.bw"),
     params:
         os.path.join(WORKDIR, "procap/windows/signal/{prefix}.{pm}.txt"),
     resources:
