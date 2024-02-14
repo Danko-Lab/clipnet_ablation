@@ -32,7 +32,7 @@ subsample_prefixes = ["?", "??", "???", "????", "?????"]
 run_directory = os.path.join(OUTDIR, "subsample_data_folds_n5_run0")
 
 output = expand(
-    os.path.join(OUTDIR, "subsample_data_folds/concat_sequence_{fold}.npz"),
+    os.path.join(run_directory, "concat_sequence_{fold}.npz"),
     fold=range(FOLDS),
 )
 
