@@ -58,7 +58,9 @@ rule procap_concat:
     input:
         [
             os.path.join(
-                DATADIR, "procap/individual_windows/%s.{pm}.{fold}.csv.gz" % prefix
+                DATADIR,
+                "procap/individual_windows/%s.{pm}.hs37d5.bwa.uniqueUMI.{fold}.csv.gz"
+                % prefix,
             )
             for prefix in subsample_prefixes
         ],
