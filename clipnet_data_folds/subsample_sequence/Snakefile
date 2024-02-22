@@ -28,7 +28,9 @@ with open(missing_fp, "r") as handle:
 # output directory to `subsample_data_folds_n5_run0` and then run the rest of the
 # pipeline.
 
-subsample_prefixes = ["?", "??", "???", "????", "?????"]
+subsample_prefixes = pd.read_csv(
+    os.path.join(WORKDIR, "subsample_prefixes_n5_run0.txt"), header=None
+)[0].tolist()
 run_directory = os.path.join(OUTDIR, "subsample_data_folds_n5_run0")
 
 output = expand(
