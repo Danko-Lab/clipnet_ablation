@@ -30,9 +30,9 @@ with open(missing_fp, "r") as handle:
 # pipeline.
 
 subsample_prefixes = list(
-    pd.read_csv("../subsample_prefixes_n20_run0.txt", header=None)[0]
+    pd.read_csv("../subsample_prefixes_n15_run0.txt", header=None)[0]
 )
-run_directory = os.path.join(OUTDIR, "subsample_data_folds_n20_run0")
+run_directory = os.path.join(OUTDIR, "subsample_data_folds_n15_run0")
 
 output = expand(
     os.path.join(run_directory, "concat_sequence_{fold}.npz"),
