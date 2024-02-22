@@ -59,7 +59,10 @@ rule sequence_all:  # A master rule that ensures all the other rules run
 rule concat_seq:
     input:
         [
-            os.path.join(DATADIR, "sequence/folds/%s_{fold}.fna.gz") % prefix
+            os.path.join(
+                DATADIR, "sequence/folds/%s.hs37d5.bwa.uniqueUMI_{fold}.fna.gz"
+            )
+            % prefix
             for prefix in subsample_prefixes
         ],
     resources:
