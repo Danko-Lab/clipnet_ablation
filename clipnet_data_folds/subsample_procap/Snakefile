@@ -28,9 +28,9 @@ with open("../../data_spec/missing_1k_genomes.txt", "r") as handle:
 # pipeline.
 
 subsample_prefixes = list(
-    pd.read_csv("../subsample_prefixes_n20_run0.txt", header=None)[0]
+    pd.read_csv("../subsample_prefixes_n15_run0.txt", header=None)[0]
 )
-run_directory = os.path.join(OUTDIR, "subsample_data_folds_n20_run0")
+run_directory = os.path.join(OUTDIR, "subsample_data_folds_n15_run0")
 
 output = expand(
     os.path.join(run_directory, "concat_procap_{fold}.npz"),
@@ -46,7 +46,7 @@ rule procap_all:  # A master rule that ensures all the other rules run
     params:
         os.path.join(WORKDIR, "procap_subsample"),
     shell:
-        "echo rm -r {params}"
+        "rm -r {params}"
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
