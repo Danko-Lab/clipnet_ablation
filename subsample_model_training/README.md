@@ -9,11 +9,10 @@
 
 ```bash
 cd /home2/ayh8/clipnet/
-n=5
-for i in {0..3}; do
+for n in 5 10 15 20 30; do
     python calculate_dataset_params.py \
-        /home2/ayh8/data/clipnet_subsampling/${n}_subsample_run${i}/ \
-        /home2/ayh8/clipnet_subsampling/models/${n}_subsample_run${i};
+        /home2/ayh8/data/clipnet_subsampling/ayh8/subsample_data_folds_n${n}_run1/ \
+        /home2/ayh8/clipnet_subsampling/models/ayh8/n${n}_run1;
 done
 ```
 
