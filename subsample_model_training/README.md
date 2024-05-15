@@ -21,9 +21,11 @@ done
 ```bash
 conda activate clipnet
 cd /home2/ayh8/clipnet/
-n=5
+n=10
 i=1
 for fold in {1..9}; do
-    python fit_nn.py /home2/ayh8/clipnet_subsampling/models/${n}_subsample_run${i}/f${fold};
+    python fit_nn.py \
+        /home2/ayh8/clipnet_subsampling/models/ayh8/n${n}_run1/f${fold} \
+        --use_specific_gpu 0;
 done
 ```
