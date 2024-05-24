@@ -26,10 +26,10 @@ python calculate_dataset_params.py \
 conda activate clipnet
 cd /home2/ayh8/clipnet/
 n=5
-i=00
+i=0
 for fold in {1..9}; do
     python fit_nn.py \
-        /home2/ayh8/clipnet_subsampling/models/ayh8/n${n}_run${i}/f${fold} \
+        /home2/ayh8/clipnet_subsampling/models/n${n}_subsample_run${i}/f${fold} \
         --use_specific_gpu 0;
 done
 ```
