@@ -70,7 +70,7 @@ done
 
 ## Training models
 
-The `fit_nn.py` script can be used to train the models. It takes as input the `f*` directories created by the `calculate_dataset_params.py` script. For example:
+The `fit_nn.py` script can be used to train the models. The `fit_nn.py` script will automatically save the model weights and training progress to the output directory, so you can check on the training progress at any time. It takes as input the `f*` directories created by the `calculate_dataset_params.py` script. For example:
 
 ```bash
 cd /home2/ayh8/clipnet/
@@ -79,4 +79,6 @@ for fold in {1..9}; do
 done
 ```
 
-This will run a for loop to train the models on each of the 9 folds for the n=5 subsample run 0. Please note that you will need to invoke `--gpu n` to specify which GPU to use. Needless to say, this will train extremely slowly on a CPU, so you should check which GPUs are available using `nvidia-smi`, then select the appropriate GPU to train on.
+This will run a for loop to train the models on each of the 9 folds for the n=5 subsample run 0. Please note that you will need to invoke `--gpu n` to specify which GPU to use. Needless to say, this will train extremely slowly on a CPU, so you should check which GPUs are available using `nvidia-smi`, then select the appropriate GPU to train on. Obviously, this will take longer for larger n values, so you might want to run this in a tmux session or screen session so that it doesn't fail when you DC.
+
+There are two GPUs available on our hosted GPU server (cbsugpu01.tc.cornell.edu), so you can run two of these training loops at once (assuming no one else is running stuff). There are two additional GPUs available on the GPU cluster, which can be requested through the SLURM scheduler (see documentation [here](https://biohpc.cornell.edu/lab/cbsubscb_SLURM.htm)).
