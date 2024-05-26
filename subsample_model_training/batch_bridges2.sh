@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH --job-name=clipnet_30_0
+#SBATCH --job-name=clipnet_20_0
 #SBATCH --time=48:00:00
 #SBATCH --partition=GPU-shared
 #SBATCH --gres=gpu:v100-32:1
@@ -10,7 +10,7 @@ module load anaconda3
 conda activate tf
 export XLA_FLAGS=--xla_gpu_cuda_data_dir=/jet/home/adamyhe/.conda/envs/tf/lib/
 
-n=30
+n=20
 run=0
 
 scratch=$LOCAL/adamyhe/$SLURM_JOB_ID
@@ -30,7 +30,7 @@ python calculate_dataset_params.py \
     --threads 1
 
 # Train the model
-for fold in {2..9}; do
+for fold in {1..9}; do
     python fit_nn.py ~/storage/adamyhe/clipnet_subsampling/models/n${n}_run${run}/f${fold} --gpu 0;
 done
 
