@@ -39,10 +39,6 @@ cd /home2/ayh8/clipnet/
 python calculate_dataset_params.py \
     /home2/ayh8/clipnet_subsampling/data/5_subsample_run1/ \
     /home2/ayh8/clipnet_subsampling/models/n5_run1/
-    
-python calculate_dataset_params.py \
-    /home2/ayh8/clipnet_subsampling/data/30_subsample_run0/ \
-    /home2/ayh8/clipnet_subsampling/models/n30_run0/
 ```
 
 Note that this script will automatically generate the output directory, which will then be structured as:
