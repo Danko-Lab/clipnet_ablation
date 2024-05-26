@@ -35,35 +35,49 @@ These data directories should be copied into a scratch space on either `/home2/`
 ```bash
 cd /home2/ayh8/clipnet/
 python calculate_dataset_params.py \
-    /home2/ayh8/data/clipnet_subsampling/subsample_data_folds_n5_run1/ \
+    /home2/ayh8/clipnet_subsampling/data/subsample_data_folds_n5_run1/ \
     /home2/ayh8/clipnet_subsampling/models/n5_run1/
 ```
 
-## Calculate dataset parameters
+Note that this script will automatically generate the output directory, which will then be structured as:
 
 ```bash
-cd /home2/ayh8/clipnet/
-for n in 5 10 15 20 30; do
-    python calculate_dataset_params.py \
-        /home2/ayh8/data/clipnet_subsampling/ayh8/subsample_data_folds_n${n}_run1/ \
-        /home2/ayh8/clipnet_subsampling/models/ayh8/n${n}_run1;
-done
-
-python calculate_dataset_params.py \
-    /home2/ayh8/data/clipnet_subsampling/${n}_subsample_run00/ \
-    /home2/ayh8/clipnet_subsampling/models/ayh8/n${n}_run00
+drwxr-sr-x 2 ayh8 danko      133 May 25 11:37 f1
+drwxr-sr-x 2 ayh8 danko      133 May 25 11:37 f2
+drwxr-sr-x 2 ayh8 danko      133 May 25 11:37 f3
+drwxr-sr-x 2 ayh8 danko      133 May 25 11:37 f4
+drwxr-sr-x 2 ayh8 danko      133 May 25 11:37 f5
+drwxr-sr-x 2 ayh8 danko      133 May 25 11:37 f6
+drwxr-sr-x 2 ayh8 danko      133 May 25 11:37 f7
+drwxr-sr-x 2 ayh8 danko      133 May 25 11:37 f8
+drwxr-sr-x 2 ayh8 danko      133 May 25 11:37 f9
 ```
 
-## Train models
+Each of the `f*` directories will contain a json file with the dataset parameters. The json files will contain important parameters like paths to each of the data files, # examples per file and per epoch, etc.
+
+For prepping a bunch of subsample runs at once, it might be useful to run this script in a for loop, e.g.:
 
 ```bash
 conda activate clipnet
+
 cd /home2/ayh8/clipnet/
-n=5
-i=0
-for fold in {1..9}; do
-    python fit_nn.py \
-        /home2/ayh8/clipnet_subsampling/models/${n}_subsample_run${i}/f${fold} \
-        --use_specific_gpu 0;
+for n in 5 10 15 20 30; do
+    python calculate_dataset_params.py \
+        /home2/ayh8/clipnet_subsampling/data/subsample_data_folds_n${n}_run0/ \
+        /home2/ayh8/clipnet_subsampling/models/n${n}_run0;
 done
 ```
+
+## Training models
+
+The `fit_nn.py` script can be used to train the models. It takes as input the `f*` directories created by the `calculate_dataset_params.py` script. For example:
+
+```bash
+cd /home2/ayh8/clipnet/
+for fold in {1..9}; do
+    python fit_nn.py \
+        /home2/ayh8/clipnet_subsampling/models/5_subsample_run0/f${fold} --gpu 0;
+done
+```
+
+Will run a for loop to train the models on each of the 9 folds for the n=5 subsample run 0. Please note that you will need to invoke `--gpu n` to specify which GPU to use. Needless to say, this will train extremely slowly on a CPU, so you should check which GPUs are available using `nvidia-smi`, then select the appropriate GPU to train on.
