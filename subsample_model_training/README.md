@@ -33,10 +33,16 @@ total 300542
 These data directories should be copied into a scratch space on either `/home2/` or the `/workdir/` on `cbsugpu01.tc.cornell.edu`. The `calculate_dataset_params.py` script can then be run to generate the parameter json files. e.g., for the above data directory, the command would be:
 
 ```bash
+conda activate clipnet
+
 cd /home2/ayh8/clipnet/
 python calculate_dataset_params.py \
-    /home2/ayh8/clipnet_subsampling/data/subsample_data_folds_n5_run1/ \
+    /home2/ayh8/clipnet_subsampling/data/5_subsample_run1/ \
     /home2/ayh8/clipnet_subsampling/models/n5_run1/
+    
+python calculate_dataset_params.py \
+    /home2/ayh8/clipnet_subsampling/data/30_subsample_run0/ \
+    /home2/ayh8/clipnet_subsampling/models/n30_run0/
 ```
 
 Note that this script will automatically generate the output directory, which will then be structured as:
@@ -58,8 +64,6 @@ Each of the `f*` directories will contain a json file with the dataset parameter
 For prepping a bunch of subsample runs at once, it might be useful to run this script in a for loop, e.g.:
 
 ```bash
-conda activate clipnet
-
 cd /home2/ayh8/clipnet/
 for n in 5 10 15 20 30; do
     python calculate_dataset_params.py \
@@ -75,7 +79,7 @@ The `fit_nn.py` script can be used to train the models. The `fit_nn.py` script w
 ```bash
 cd /home2/ayh8/clipnet/
 for fold in {1..9}; do
-    python fit_nn.py /home2/ayh8/clipnet_subsampling/models/5_subsample_run0/f${fold} --gpu 0;
+    python fit_nn.py /home2/ayh8/clipnet_subsampling/models/n5_run0/f${fold} --gpu 0;
 done
 ```
 
