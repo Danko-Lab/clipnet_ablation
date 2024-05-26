@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH --job-name=fit_fold1
+#SBATCH --job-name=clipnet_30_1
 #SBATCH --time=48:00:00
 #SBATCH --partition=GPU-shared
 #SBATCH --gres=gpu:v100-32:1
@@ -10,25 +10,30 @@ module load anaconda3
 conda activate tf
 export XLA_FLAGS=--xla_gpu_cuda_data_dir=/jet/home/adamyhe/.conda/envs/tf/lib/
 
-n=$1
-run=$2
-fold=$3
+n=30
+run=1
 
 scratch=$LOCAL/adamyhe/$SLURM_JOB_ID
 mkdir -p $scratch
 cd $scratch
+
+# Copy the necessary files to the scratch directory
 cp -r ~/storage/adamyhe/clipnet .
-cp -r ~/storage/adamyhe/final_data_folds .
-cp ~/storage/adamyhe/clipnet_old/calculate_fold_params_psc.py clipnet/
+cp -r ~/storage/adamyhe/clipnet_subsampling/data/${n}_subsample_run${run} .
+cp /jet/home/adamyhe/.conda/envs/tf/lib/libdevice.10.bc clipnet/
 
-cd $LOCAL/adamyhe/clipnet
-cp /jet/home/adamyhe/.conda/envs/tf/lib/libdevice.10.bc .
+# Calculate parameters for this data fold
+cd clipnet/
+python calculate_dataset_params.py \
+    ../${n}_subsample_run${run} \
+    ~/storage/adamyhe/clipnet_subsampling/models/n${n}_run${run}/ \
+    --threads 1
 
-# calculate parameters for this data fold
-python calculate_fold_params_psc.py $LOCAL/adamyhe/final_data_folds $fold
+# Train the model
+for fold in {2..9}; do
+    echo python fit_nn.py ~/storage/adamyhe/clipnet_subsampling/models/n${n}_run${run}/f${fold} --gpu 0;
+done
 
-# train the model
-python fit_nn.py /ocean/projects/bio210011p/adamyhe/dilated_models/f$(($fold+1)) \
-	--n_gpus 1 --prefix rnn_v11
-
-rm -r $LOCAL/adamyhe/
+# Cleanup
+cd $LOCAL
+rm -r $scratch

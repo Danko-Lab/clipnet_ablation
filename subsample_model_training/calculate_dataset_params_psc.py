@@ -15,11 +15,11 @@ fold = int(sys.argv[3])
 
 
 def write_dataset_params(out_basedir, i):
-    outdir = os.path.join(out_basedir, f"f{i + 1}/")
+    outdir = os.path.join(out_basedir, f"f{i}/")
     os.makedirs(outdir, exist_ok=True)
 
-    test_folds = [i + 1]
-    val_folds = [(i + 1) % 9 + 1]
+    test_folds = [i]
+    val_folds = [(i) % 9 + 1]
     train_folds = [j for j in range(1, 10) if j not in test_folds + val_folds]
     print(train_folds, val_folds, test_folds)
 
