@@ -75,9 +75,8 @@ The `fit_nn.py` script can be used to train the models. It takes as input the `f
 ```bash
 cd /home2/ayh8/clipnet/
 for fold in {1..9}; do
-    python fit_nn.py \
-        /home2/ayh8/clipnet_subsampling/models/5_subsample_run0/f${fold} --gpu 0;
+    python fit_nn.py /home2/ayh8/clipnet_subsampling/models/5_subsample_run0/f${fold} --gpu 0;
 done
 ```
 
-Will run a for loop to train the models on each of the 9 folds for the n=5 subsample run 0. Please note that you will need to invoke `--gpu n` to specify which GPU to use. Needless to say, this will train extremely slowly on a CPU, so you should check which GPUs are available using `nvidia-smi`, then select the appropriate GPU to train on.
+This will run a for loop to train the models on each of the 9 folds for the n=5 subsample run 0. Please note that you will need to invoke `--gpu n` to specify which GPU to use. Needless to say, this will train extremely slowly on a CPU, so you should check which GPUs are available using `nvidia-smi`, then select the appropriate GPU to train on.
