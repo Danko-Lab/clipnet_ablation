@@ -31,7 +31,7 @@ python calculate_dataset_params.py \
 
 # Train the model
 for fold in {1..9}; do
-    echo python fit_nn.py ~/storage/adamyhe/clipnet_subsampling/models/n${n}_run${run}/f${fold} --gpu 0;
+    python fit_nn.py ~/storage/adamyhe/clipnet_subsampling/models/n${n}_run${run}/f${fold} --gpu 0;
 done
 
 # Cleanup
