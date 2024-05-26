@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH --job-name=clipnet_20_2
+#SBATCH --job-name=clipnet_20_1
 #SBATCH --time=48:00:00
 #SBATCH --partition=GPU-shared
 #SBATCH --gres=gpu:v100-32:1
@@ -11,7 +11,7 @@ conda activate tf
 export XLA_FLAGS=--xla_gpu_cuda_data_dir=/jet/home/adamyhe/.conda/envs/tf/lib/
 
 n=20
-run=2
+run=1
 
 scratch=$LOCAL/adamyhe/$SLURM_JOB_ID
 mkdir -p $scratch
