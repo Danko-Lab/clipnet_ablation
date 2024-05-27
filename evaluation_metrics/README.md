@@ -7,14 +7,16 @@ import os
 from pathlib import Path
 
 clipnet_install = "/home2/ayh8/clipnet"
-out_dir = Path("/home2/ayh8/predictions/subsample/")
+out_dir = Path("/home2/ayh8/clipnet_subsampling/predictions/")
 out_dir.mkdir(exist_ok=True, parents=True)
-fasta_fp = Path("/home2/ayh8/data/gse110638/fixed_windows/data_folds/sequence/").joinpath("concat_sequence_0.fna.gz")
+fasta_fp = Path("/home2/ayh8/data/lcl/fixed_windows/").joinpath("concat_sequence_0.fna.gz")
 
-for run in ["n5_run0", "n10_run0", "n15_run0", "n20_run0", "n30_run0"]:
-    model_dir = Path("/home2/ayh8/subsample_models/").joinpath(run)
+runs = ["n5_run0", "n5_run1", "n10_run0", "n10_run1", "n15_run0", "n15_run1", "n20_run0", "n20_run1", "n20_run2", "n20_run3", "n20_run4", "n30_run0", "n30_run1"]
+
+for run in runs:
+    model_dir = Path("/home2/ayh8/clipnet_subsampling/models/").joinpath(run)
     out_fp = out_dir.joinpath(f"ensemble_{run}_fold_0_predictions.h5")
-    cmd = f"python {clipnet_install}/predict_ensemble.py {fasta_fp} {out_fp} --model_dir {str(model_dir)} --gpu --low_mem"
+    cmd = f"python {clipnet_install}/predict_ensemble.py {fasta_fp} {out_fp} --model_dir {str(model_dir)} --gpu 0"
     print(cmd)
     os.system(cmd)
 ```
@@ -132,6 +134,8 @@ for run in ["n5_run0", "n10_run0", "n15_run0", "n20_run0", "n30_run0"]:
             print(f"{output} exists, skipping.")
 ```
 
+## Predict on tiQTLs with individual models
+
 ```python
 import json
 import os
@@ -174,6 +178,8 @@ for run in ["n5_run0", "n10_run0", "n15_run0", "n20_run0", "n30_run0"]:
             else:
                 print(f"{output} exists, skipping.")
 ```
+
+## Predict on diQTLs with individual models
 
 ```python
 import json
