@@ -10,8 +10,8 @@ module load anaconda3
 conda activate tf
 export XLA_FLAGS=--xla_gpu_cuda_data_dir=/jet/home/adamyhe/.conda/envs/tf/lib/
 
-n=20
-run=0
+n=30
+run=2
 
 scratch=$LOCAL/adamyhe/$SLURM_JOB_ID
 mkdir -p $scratch
@@ -30,7 +30,7 @@ python calculate_dataset_params.py \
     --threads 1
 
 # Train the model
-for fold in {1..9}; do
+for fold in {8..9}; do
     python fit_nn.py ~/storage/adamyhe/clipnet_subsampling/models/n${n}_run${run}/f${fold} --gpu 0;
 done
 
