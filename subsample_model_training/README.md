@@ -74,7 +74,7 @@ The `fit_nn.py` script can be used to train the models. The `fit_nn.py` script w
 
 ```bash
 cd /home2/ayh8/clipnet/
-for fold in {1..9}; do
+for fold in {2..9}; do
     python fit_nn.py /home2/ayh8/clipnet_subsampling/models/n15_run2/f${fold} --gpu 0;
 done
 ```
