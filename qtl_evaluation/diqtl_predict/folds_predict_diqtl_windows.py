@@ -26,7 +26,7 @@ n_individuals = [5, 10, 15, 20, 30]
 run = range(5)
 
 for n, r, fold in itertools.product(n_individuals, run, folds):
-    model_dir = Path("../../models/n{n}_run{r}/")
+    model_dir = Path(f"../../models/n{n}_run{r}/")
     model_fp = model_dir.joinpath(f"fold_{fold}.h5")
     outdir = Path(predict_dir, f"n{n}_run{r}/fold_{fold}")
     outdir.mkdir(exist_ok=True, parents=True)
