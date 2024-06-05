@@ -23,8 +23,10 @@ n_individuals = [5, 10, 15, 20, 30]
 run = range(5)
 for n, r in itertools.product(n_individuals, run):
     model_dir = Path(f"../../models/n{n}_run{r}/")
+    outdir = Path(predict_dir, f"n{n}_run{r}")
+    outdir.mkdir(exist_ok=True, parents=True)
     for prefix in nonempty_procap_prefixes:
-        output = os.path.join(predict_dir, f"{prefix}.h5")
+        output = os.path.join(outdir, f"{prefix}.h5")
         if not os.path.exists(output):
             sequence = os.path.join(
                 "../../../clipnet_data/diqtl/sequence", f"{prefix}.fna.gz"
