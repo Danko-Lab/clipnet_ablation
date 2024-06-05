@@ -15,7 +15,7 @@ nonempty_procap_prefixes = [
     prefix for prefix in procap_prefixes if d[prefix] not in missing
 ]
 
-predict_dir = Path("../clipnet_data/tiqtl/ensemble_predict/")
+predict_dir = Path("../clipnet_data/tiqtl/ensemble_predict")
 predict_dir.mkdir(exist_ok=True, parents=True)
 
 clipnet_install = "~/github/clipnet/"
