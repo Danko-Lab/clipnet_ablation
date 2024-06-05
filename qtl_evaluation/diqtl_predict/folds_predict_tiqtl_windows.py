@@ -3,11 +3,11 @@ import json
 import os
 from pathlib import Path
 
-file_name_hash = "../data_spec/procap_to_1k_genomes.json"
+file_name_hash = "../../data_spec/procap_to_1k_genomes.json"
 with open(file_name_hash, "r") as handle:
     d = json.load(handle)
 
-with open("../data_spec/missing_1k_genomes.txt", "r") as handle:
+with open("../../data_spec/missing_1k_genomes.txt", "r") as handle:
     missing = handle.read().splitlines()
 
 
@@ -33,7 +33,7 @@ for n, r, fold in itertools.product(n_individuals, run, folds):
     for prefix in nonempty_procap_prefixes:
         output = os.path.join(outdir, f"{prefix}.h5")
         if not os.path.exists(output):
-            sequence = f"/home2/ayh8/data/lcl/tiqtl/sequence/{prefix}.fna.gz"
+            sequence = f"/home2/ayh8/data/lcl/diqtl/sequence/{prefix}.fna.gz"
             cmd = f"python {clipnet_install}/predict_individual_model.py \
                     {model_fp} {sequence} {output} --gpu 1"
             os.system(f"echo {cmd}")
