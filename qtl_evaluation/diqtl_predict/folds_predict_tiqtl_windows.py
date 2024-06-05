@@ -33,7 +33,7 @@ for n, r, fold in itertools.product(n_individuals, run, folds):
     for prefix in nonempty_procap_prefixes:
         output = os.path.join(outdir, f"{prefix}.h5")
         if not os.path.exists(output):
-            sequence = f"/home2/ayh8/data/gse110638/tiqtl/sequence/{prefix}.fna.gz"
+            sequence = f"/home2/ayh8/data/lcl/tiqtl/sequence/{prefix}.fna.gz"
             cmd = f"python {clipnet_install}/predict_individual_model.py \
                     {model_fp} {sequence} {output} --gpu 1"
             os.system(f"echo {cmd}")
