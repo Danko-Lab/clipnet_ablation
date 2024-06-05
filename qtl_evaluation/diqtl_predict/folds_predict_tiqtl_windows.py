@@ -37,6 +37,6 @@ for n, r, fold in itertools.product(n_individuals, run, folds):
             cmd = f"python {clipnet_install}/predict_individual_model.py \
                     {model_fp} {sequence} {output} --gpu 1"
             os.system(f"echo {cmd}")
-            os.system(cmd)
+            # os.system(cmd)
         else:
             print(f"{output} exists, skipping.")
