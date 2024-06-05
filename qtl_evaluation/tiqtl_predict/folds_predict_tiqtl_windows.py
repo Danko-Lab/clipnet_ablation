@@ -21,7 +21,7 @@ folds = range(1, 10)
 predict_dir = Path("../../predictions/tiqtl/fold_predict")
 predict_dir.mkdir(exist_ok=True, parents=True)
 
-clipnet_install = "~/github/clipnet"
+clipnet_install = "/home2/ayh8/clipnet"
 n_individuals = [5, 10, 15, 20, 30]
 run = range(5)
 
