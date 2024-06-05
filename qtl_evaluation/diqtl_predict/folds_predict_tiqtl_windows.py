@@ -18,7 +18,7 @@ nonempty_procap_prefixes = [
 
 folds = range(1, 10)
 
-predict_dir = Path("/mnt/i/clipnet_data/diqtl/fold_predict")
+predict_dir = Path("../../data/diqtl/fold_predict")
 predict_dir.mkdir(exist_ok=True, parents=True)
 
 clipnet_install = "~/github/clipnet"
