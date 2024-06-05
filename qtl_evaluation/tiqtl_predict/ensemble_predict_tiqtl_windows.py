@@ -3,11 +3,6 @@ import json
 import os
 from pathlib import Path
 
-with open("../data_spec/lcl_proc_spec.json", "r") as f:
-    dirs = json.load(f)
-    DATADIR = dirs["DATADIR"]
-    PREDICTDIR = dirs["PREDICTDIR"]
-
 file_name_hash = "../../data_spec/procap_to_1k_genomes.json"
 with open(file_name_hash, "r") as handle:
     d = json.load(handle)
