@@ -22,7 +22,7 @@ clipnet_install = "~/github/clipnet"
 n_individuals = [5, 10, 15, 20, 30]
 run = range(5)
 for n, r in itertools.product(n_individuals, run):
-    model_dir = Path(f"../models/n{n}_run{r}/")
+    model_dir = Path(f"../../models/n{n}_run{r}/")
     for prefix in nonempty_procap_prefixes:
         output = os.path.join(predict_dir, f"{prefix}.h5")
         if not os.path.exists(output):
