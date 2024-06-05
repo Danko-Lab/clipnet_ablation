@@ -31,7 +31,6 @@ for n, r in itertools.product(n_individuals, run):
             sequence = os.path.join(
                 "../../../clipnet_data/diqtl/sequence", f"{prefix}.fna.gz"
             )
-            output = os.path.join(predict_dir, f"{prefix}.h5")
             cmd = f"python {clipnet_install}/predict_ensemble.py \
                     {sequence} {output} --model_dir {model_dir} --gpu 0"
             os.system(f"echo {cmd}")
