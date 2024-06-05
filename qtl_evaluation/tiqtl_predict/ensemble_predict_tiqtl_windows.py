@@ -15,7 +15,7 @@ nonempty_procap_prefixes = [
     prefix for prefix in procap_prefixes if d[prefix] not in missing
 ]
 
-predict_dir = Path("../clipnet_data/tiqtl/ensemble_predict")
+predict_dir = Path("/mnt/i/clipnet_data/tiqtl/ensemble_predict")
 predict_dir.mkdir(exist_ok=True, parents=True)
 
 clipnet_install = "~/github/clipnet/"
@@ -31,7 +31,7 @@ for n, r in itertools.product(n_individuals, run):
             )
             output = os.path.join(predict_dir, f"{prefix}.h5")
             cmd = f"python {clipnet_install}/predict_ensemble.py \
-                    {sequence} --model_dir {model_dir} --gpu 0"
+                    {sequence} {output} --model_dir {model_dir} --gpu 0"
             os.system(f"echo {cmd}")
             os.system(cmd)
         else:
