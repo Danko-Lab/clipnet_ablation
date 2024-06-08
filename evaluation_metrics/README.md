@@ -4,22 +4,28 @@
 
 ```python
 import os
+import itertools
 from pathlib import Path
 
 clipnet_install = "/home2/ayh8/clipnet"
-out_dir = Path("/home2/ayh8/clipnet_subsampling/predictions/")
+out_dir = Path("/home2/ayh8/clipnet_subsampling/predictions/overall")
 out_dir.mkdir(exist_ok=True, parents=True)
 fasta_fp = Path("/home2/ayh8/data/lcl/fixed_windows/").joinpath("concat_sequence_0.fna.gz")
 procap_fp = Path("/home2/ayh8/data/lcl/fixed_windows/").joinpath("concat_procap_0.npz")
 
-runs = ["n5_run0", "n5_run1", "n10_run0", "n10_run1", "n15_run0", "n15_run1", "n20_run0", "n20_run1", "n20_run2", "n20_run3", "n20_run4", "n30_run0", "n30_run1"]
+n_individuals = [20]
+runs = range(5)
 
-for run in runs:
+for n, r in itertools.product(n_individuals, runs):
+    run = f"n{n}_run{r}"
     model_dir = Path("/home2/ayh8/clipnet_subsampling/models/").joinpath(run)
     out_fp = out_dir.joinpath(f"ensemble_{run}_fold_0_predictions.h5")
-    cmd = f"python {clipnet_install}/predict_ensemble.py {fasta_fp} {out_fp} --model_dir {str(model_dir)} --gpu 0"
-    print(cmd)
-    os.system(cmd)
+    if not os.path.exists(out_fp):
+        cmd = f"python {clipnet_install}/predict_ensemble.py {fasta_fp} {out_fp} --model_dir {str(model_dir)} --gpu 1"
+        print(cmd)
+        os.system(cmd)
+    else:
+        print(f"{out_fp} exists, skipping.")
 
 for run in runs:
     model_dir = Path("/home2/ayh8/clipnet_subsampling/models/").joinpath(run)
