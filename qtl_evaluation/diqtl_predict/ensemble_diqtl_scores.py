@@ -1,12 +1,15 @@
+import sys
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
-import scores
 from scipy.stats import pearsonr
 
-prediction_dir = Path("/home2/ayh8/predictions/ensemble/tiqtl/ensemble_predictions/")
+sys.path.append("../")
+import scores
+
+prediction_dir = Path("/home2/ayh8/predictions/ensemble/diqtl/ensemble_predictions/")
 expt_fp = "expt_tracks_per_snp_by_allele.joblib.gz"
 pred_fp = "pred_tracks_per_snp_by_allele.joblib.gz"
 expt = joblib.load(prediction_dir.joinpath(expt_fp))
@@ -15,7 +18,7 @@ pred = joblib.load(prediction_dir.joinpath(pred_fp))
 qtls = pd.DataFrame({"snps": expt.keys()})
 qtl_coord = pd.merge(
     qtls,
-    pd.read_csv("Table.7c.tiQTL.2k.txt.gz", sep="\t"),
+    pd.read_csv("Table.7c.diqtl.2k.txt.gz", sep="\t"),
     on="snps",
     how="left",
 )
@@ -62,8 +65,8 @@ sum_log_score = pd.DataFrame(
     }
 )
 
-l2.to_csv(prediction_dir.joinpath("tiqtls_l2_scores.csv.gz"))
-sum_score.to_csv(prediction_dir.joinpath("tiqtls_sum_scores.csv.gz"))
-sum_log_score.to_csv(prediction_dir.joinpath("tiqtls_sum_log_scores.csv.gz"))
+l2.to_csv(prediction_dir.joinpath("diqtls_l2_scores.csv.gz"))
+sum_score.to_csv(prediction_dir.joinpath("diqtls_sum_scores.csv.gz"))
+sum_log_score.to_csv(prediction_dir.joinpath("diqtls_sum_log_scores.csv.gz"))
 
 pearsonr(l2.expt, l2.pred)

@@ -11,7 +11,7 @@ import tqdm
 sys.path.append("../")
 import scores
 
-PREDICTDIR = "/workdir/ayh8/clipnet_subsampling/tiqtl/"
+PREDICTDIR = "/workdir/ayh8/clipnet_subsampling/diqtl/"
 
 n_individuals = [5, 10, 15, 20, 30]
 runs = range(5)
@@ -37,7 +37,7 @@ expt_alt_mean_tracks = pd.DataFrame(
 ).transpose()
 qtls = pd.DataFrame({"snps": expt.keys()})
 qtl_coord = pd.merge(
-    qtls, pd.read_csv("Table.7c.tiQTL.2k.txt.gz", sep="\t"), on="snps", how="left"
+    qtls, pd.read_csv("Table.10a.diQTL.2k.csv.gz"), on="snps", how="left"
 )
 qtl_coord[["chrom", "start"]] = qtl_coord["gene"].str.split(":", expand=True)
 
