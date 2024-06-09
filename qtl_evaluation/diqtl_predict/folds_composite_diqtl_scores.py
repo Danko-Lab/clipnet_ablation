@@ -23,7 +23,7 @@ data_splits = pd.read_csv("data_fold_assignments.csv")
 holdouts = {i: list(data_splits[data_splits.fold == int(i)].chrom) for i in folds}
 
 # Load and clean experimental data
-expt_fp = "expt_tracks_per_snp_by_allele.joblib.gz"
+expt_fp = "/fs/cbsubscb17/storage/projects/CLIPNET/predictions/ensemble/diqtl/ensemble_predictions/expt_tracks_per_snp_by_allele.joblib.gz"
 expt = joblib.load(expt_fp)
 ref_n = {k: len(expt[k][0]) for k in expt.keys()}
 alt_n = {k: len(expt[k][1]) for k in expt.keys()}
@@ -37,9 +37,9 @@ expt_alt_mean_tracks = pd.DataFrame(
 ).transpose()
 qtls = pd.DataFrame({"snps": expt.keys()})
 qtl_coord = pd.merge(
-    qtls, pd.read_csv("Table.10a.diQTL.2k.csv.gz"), on="snps", how="left"
+    qtls, pd.read_csv("Table.10a.diQTL.2kb.csv.gz"), on="snps", how="left"
 )
-qtl_coord[["chrom", "start"]] = qtl_coord["gene"].str.split(":", expand=True)
+qtl_coord[["chrom", "start"]] = qtl_coord["gene"].str.split(".", expand=True)
 
 outdir = os.path.join(PREDICTDIR, "fold_predict/split_by_allele/")
 os.makedirs(outdir, exist_ok=True)
@@ -107,5 +107,5 @@ def calculate_scores(it):
 
 
 # Run in parallel
-with mp.Pool(25) as pool:
+with mp.Pool(4) as pool:
     r = list(tqdm.tqdm(pool.imap(calculate_scores, iters), total=len(iters)))

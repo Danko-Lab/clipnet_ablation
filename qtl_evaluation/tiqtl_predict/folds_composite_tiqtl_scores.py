@@ -107,5 +107,5 @@ def calculate_scores(it):
 
 
 # Run in parallel
-with mp.Pool(25) as pool:
+with mp.Pool(8) as pool:
     r = list(tqdm.tqdm(pool.imap(calculate_scores, iters), total=len(iters)))
