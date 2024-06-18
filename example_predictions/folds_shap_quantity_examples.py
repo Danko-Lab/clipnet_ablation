@@ -82,7 +82,7 @@ qtls_to_explain[4, 499, :] = np.array([0, 2, 0, 0])
 
 # Load models and create explainers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-nn = clipnet.CLIPNET(n_gpus=1)
+nn = clipnet.CLIPNET(n_gpus=1, use_specific_gpu=1)
 
 n_individuals = [5, 10, 15, 20, 30]
 runs = range(5)
@@ -96,13 +96,8 @@ for n, r in tqdm.tqdm(itertools.product(n_individuals, runs)):
     ]
     explainers = []
     for model in models:
-        profile_contrib = tf.reduce_mean(
-            tf.stop_gradient(tf.nn.softmax(model.output[0], axis=-1)) * model.output[0],
-            axis=-1,
-            keepdims=True,
-        )
         explainers.append(
-            shap.DeepExplainer((model.input, profile_contrib), twohot_ref)
+            shap.DeepExplainer((model.input, model.output[1]), twohot_ref)
         )
     raw_qtl_explanations = [
         explainer.shap_values(qtls_to_explain) for explainer in explainers
@@ -120,21 +115,5 @@ for n, r in tqdm.tqdm(itertools.product(n_individuals, runs)):
     gc.collect()
 
 np.savez_compressed(
-    out_dir.joinpath("subsample_qtl_examples_profile.npz"), **attribution_scores
+    out_dir.joinpath("subsample_qtl_examples_quantity.npz"), **attribution_scores
 )
-
-
-# Main explanations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# raw_explanations = [explainer.shap_values(seqs_to_explain) for explainer in explainers]
-# scaled_explanations = {
-#    f"fold_{i}": (np.sum(raw_explanations[i - 1], axis=0) * seqs_to_explain).swapaxes(
-#        1, 2
-#    )
-#    for i in FOLDS
-# }
-
-# np.savez_compressed(
-#    out_dir.joinpath("folds_examples_profile.npz"),
-#    **scaled_explanations,
-# )
