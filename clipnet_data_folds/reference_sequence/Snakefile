@@ -85,7 +85,7 @@ rule unpack_procap_windows:
 
 rule get_sequence_windows:
     input:
-        fa=os.path.join(WORKDIR, "GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta")
+        fa=os.path.join(WORKDIR, "GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta"),
         windows=[
             os.path.join(WORKDIR, "sequence/procap/%s_window_uniq.bed" % prefix)
             for prefix in nonempty_procap_prefixes
