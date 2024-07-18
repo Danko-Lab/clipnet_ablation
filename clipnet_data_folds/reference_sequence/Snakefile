@@ -58,15 +58,13 @@ rule sequence_all:  # A master rule that ensures all the other rules run
 
 rule unpack_reference_sequences:
     input:
-        os.path.join(
-            REFDIR, "hg38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz"
-        ),
+        os.path.join(REFDIR, "hg38/hg38.2bit"),
     resources:
         load=1,
     output:
-        os.path.join(WORKDIR, "GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta"),
+        os.path.join(WORKDIR, "hg38.fasta"),
     shell:
-        "gunzip -c {input} > {output}"
+        "twoBitToFa {input} {output}"
 
 
 rule unpack_procap_windows:
@@ -87,7 +85,7 @@ rule unpack_procap_windows:
 
 rule get_sequence_windows:
     input:
-        fa=os.path.join(WORKDIR, "GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta"),
+        fa=os.path.join(WORKDIR, "hg38.fasta"),
         windows=[
             os.path.join(WORKDIR, "sequence/procap/%s_window_uniq.bed" % prefix)
             for prefix in nonempty_procap_prefixes
@@ -113,7 +111,7 @@ rule get_sequence_windows:
             {input.fa} \
             {params.out_dir} \
             {params.file_prefix_hash_fp} \
-            --missing {params.missing_fp}
+            --missing {params.missing_fp} \
             --threads {resources.threads}
         """
 
