@@ -35,7 +35,7 @@ output = expand(
     fold=range(FOLDS),
 )
 individuals = expand(
-    os.path.join(DATADIR, "reference_sequence/folds/{prefix}_{fold}.fna.gz"),
+    os.path.join(DATADIR, "sequence/reference_sequence_folds/{prefix}_{fold}.fna.gz"),
     prefix=nonempty_procap_prefixes,
     fold=range(FOLDS),
 )
@@ -149,7 +149,9 @@ rule split_sequence:
         fold_assignments=fold_assignments,
         fold="{fold}",
     output:
-        fna=os.path.join(DATADIR, "reference_sequence/folds/{prefix}_{fold}.fna.gz"),
+        fna=os.path.join(
+            DATADIR, "sequence/reference_sequence_folds/{prefix}_{fold}.fna.gz"
+        ),
     run:
         from Bio import SeqIO, bgzf
         import gzip
