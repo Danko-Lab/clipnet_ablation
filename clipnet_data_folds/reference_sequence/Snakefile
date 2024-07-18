@@ -43,7 +43,7 @@ individuals = expand(
 
 rule sequence_all:  # A master rule that ensures all the other rules run
     input:
-        #        output,
+        # output,
         individuals,
     params:
         os.path.join(WORKDIR, "sequence"),
@@ -58,7 +58,9 @@ rule sequence_all:  # A master rule that ensures all the other rules run
 
 rule unpack_reference_sequences:
     input:
-        os.path.join(REFDIR, "GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz"),
+        os.path.join(
+            REFDIR, "hg38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz"
+        ),
     resources:
         load=1,
     output:
