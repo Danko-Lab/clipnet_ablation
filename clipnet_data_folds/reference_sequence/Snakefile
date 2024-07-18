@@ -110,7 +110,7 @@ rule get_sequence_windows:
         """
         python ../../data_processing_scripts/get_reference_sequence_windows.py \
             {params.bed_dir} \
-            {params.fa_dir} \
+            {input.fa} \
             {params.out_dir} \
             {params.file_prefix_hash_fp} \
             --missing {params.missing_fp}

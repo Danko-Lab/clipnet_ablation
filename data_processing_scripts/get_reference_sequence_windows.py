@@ -13,17 +13,17 @@ import multiprocessing as mp
 import os
 
 
-def gsw(exp_prefix, ref_fna, bed_fp, out_dir):
+def gsw(exp_dir, exp_prefix, ref_fna, out_dir):
+    bed = os.path.join(exp_dir, "%s_window_uniq.bed" % exp_prefix)
     out = os.path.join(out_dir, f"{exp_prefix}.fna")
-    cmd = f"bedtools getfasta -fi {ref_fna} -bed {bed_fp} -fo {out}"
-    os.system(f"echo {cmd}")
+    cmd = f"bedtools getfasta -fi {ref_fna} -bed {bed} -fo {out}"
     os.system(cmd)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("bed_fp", type=str, help="file path to bed regions to extract")
-    parser.add_argument("ref_fna", type=str, help="input fasta directory")
+    parser.add_argument("bed_dir", type=str, help="input bed directory")
+    parser.add_argument("ref_fna", type=str, help="reference fasta file")
     parser.add_argument("out_dir", type=str, help="output directory")
     parser.add_argument(
         "file_prefix_hash",
@@ -60,9 +60,9 @@ if __name__ == "__main__":
     p.starmap(
         gsw,
         zip(
+            it.repeat(args.bed_dir),
             nonempty_exp_prefixes,
             it.repeat(args.ref_fna),
-            it.repeat(args.bed_fp),
             it.repeat(args.out_dir),
         ),
     )
