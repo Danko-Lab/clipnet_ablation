@@ -14,7 +14,7 @@ import os
 
 
 def gsw(exp_prefix, ref_fna, bed_fp, out_dir):
-    out = os.path.join(out_dir, "%s.fna" % exp_prefix)
+    out = os.path.join(out_dir, f"{exp_prefix}.fna")
     cmd = f"bedtools getfasta -fi {ref_fna} -bed {bed_fp} -fo {out}"
     os.system(f"echo {cmd}")
     os.system(cmd)
