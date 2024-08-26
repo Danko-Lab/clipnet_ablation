@@ -62,3 +62,28 @@ for n, r in itertools.product(n_individuals, runs):
     else:
         print(f"{out_fp} exists, skipping.")
 ```
+
+## Calculate individual-specific performance metrics
+
+```python
+import h5py
+from pathlib import Path
+import numpy as np
+import pandas as pd
+
+clipnet_install = "/home2/ayh8/clipnet"
+out_dir = "/home2/ayh8/predictions/lcl_subsample/"
+procap_fp = "/home2/ayh8/data/lcl/fixed_windows/concat_procap_0.csv.gz"
+runs = range(5)
+
+procap = pd.read_csv(procap_fp, index_col=0)
+
+for r in runs:
+    name = Path(f"../clipnet_data_folds/subsample_prefixes_n1_run{r}.txt").read_text()
+    out_fp = out_dir.joinpath(f"n1_run{r}_prediction.hdf5")
+    with h5py.File(out_fp, "r") as hf:
+        profile = hf["track"][:]
+        quantity = hf["quantity"][:]
+        prediction = (profile / np.sum(profile, axis=1)[:, None]) * quantity
+    fa = 
+```
