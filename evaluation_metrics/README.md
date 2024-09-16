@@ -79,8 +79,8 @@ procap = pd.read_csv(procap_fp, index_col=0, header=None)
 
 runs = range(5)
 for r in runs:
-    names = tuple(filter(None, Path(f"../clipnet_data_folds/subsample_prefixes_n10_run{r}.txt").read_text().split("\n")))
-    out_fp = out_dir.joinpath(f"ensemble_n10_run{r}_fold_0_predictions.h5")
+    names = tuple(filter(None, Path(f"../clipnet_data_folds/subsample_prefixes_n1_run{r}.txt").read_text().split("\n")))
+    out_fp = out_dir.joinpath(f"n1_run{r}_prediction.hdf5")
     with h5py.File(out_fp, "r") as hf:
         profile = hf["track"][:]
         quantity = hf["quantity"][:]
