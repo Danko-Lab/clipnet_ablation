@@ -1,0 +1,225 @@
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n5_run0_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n5_run0_fold_0_performance_metrics.h5
+Median Track Pearson: 0.5339
+Mean Track Pearson: 0.5237 +/- 0.1279
+Median Track JS Distance: 0.5010
+Mean Track JS Distance: 0.5085 +/- 0.0532
+Track Directionality Pearson: 0.7936
+Quantity Log Pearson: 0.6244
+Quantity Spearman: 0.6059
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n5_run1_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n5_run1_fold_0_performance_metrics.h5
+Median Track Pearson: 0.6036
+Mean Track Pearson: 0.5971 +/- 0.1508
+Median Track JS Distance: 0.4954
+Mean Track JS Distance: 0.5038 +/- 0.0608
+Track Directionality Pearson: 0.7621
+Quantity Log Pearson: 0.6315
+Quantity Spearman: 0.6023
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n5_run2_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n5_run2_fold_0_performance_metrics.h5
+Median Track Pearson: 0.4780
+Mean Track Pearson: 0.4660 +/- 0.1124
+Median Track JS Distance: 0.5108
+Mean Track JS Distance: 0.5175 +/- 0.0500
+Track Directionality Pearson: 0.7950
+Quantity Log Pearson: 0.6056
+Quantity Spearman: 0.5794
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n5_run3_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n5_run3_fold_0_performance_metrics.h5
+Median Track Pearson: 0.4802
+Mean Track Pearson: 0.4656 +/- 0.1083
+Median Track JS Distance: 0.5072
+Mean Track JS Distance: 0.5152 +/- 0.0480
+Track Directionality Pearson: 0.7942
+Quantity Log Pearson: 0.6146
+Quantity Spearman: 0.6004
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n5_run4_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n5_run4_fold_0_performance_metrics.h5
+Median Track Pearson: 0.4998
+Mean Track Pearson: 0.4886 +/- 0.1196
+Median Track JS Distance: 0.5062
+Mean Track JS Distance: 0.5141 +/- 0.0510
+Track Directionality Pearson: 0.7885
+Quantity Log Pearson: 0.6524
+Quantity Spearman: 0.6241
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n10_run0_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n10_run0_fold_0_performance_metrics.h5
+Median Track Pearson: 0.6854
+Mean Track Pearson: 0.6691 +/- 0.1514
+Median Track JS Distance: 0.4657
+Mean Track JS Distance: 0.4761 +/- 0.0648
+Track Directionality Pearson: 0.7698
+Quantity Log Pearson: 0.6287
+Quantity Spearman: 0.5878
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n10_run1_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n10_run1_fold_0_performance_metrics.h5
+Median Track Pearson: 0.6422
+Mean Track Pearson: 0.6297 +/- 0.1483
+Median Track JS Distance: 0.4742
+Mean Track JS Distance: 0.4850 +/- 0.0618
+Track Directionality Pearson: 0.7865
+Quantity Log Pearson: 0.6492
+Quantity Spearman: 0.6141
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n10_run2_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n10_run2_fold_0_performance_metrics.h5
+Median Track Pearson: 0.6815
+Mean Track Pearson: 0.6651 +/- 0.1523
+Median Track JS Distance: 0.4632
+Mean Track JS Distance: 0.4749 +/- 0.0657
+Track Directionality Pearson: 0.7805
+Quantity Log Pearson: 0.6437
+Quantity Spearman: 0.6071
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n10_run3_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n10_run3_fold_0_performance_metrics.h5
+Median Track Pearson: 0.6964
+Mean Track Pearson: 0.6785 +/- 0.1505
+Median Track JS Distance: 0.4603
+Mean Track JS Distance: 0.4694 +/- 0.0652
+Track Directionality Pearson: 0.7755
+Quantity Log Pearson: 0.6444
+Quantity Spearman: 0.6059
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n10_run4_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n10_run4_fold_0_performance_metrics.h5
+Median Track Pearson: 0.6818
+Mean Track Pearson: 0.6680 +/- 0.1545
+Median Track JS Distance: 0.4680
+Mean Track JS Distance: 0.4763 +/- 0.0653
+Track Directionality Pearson: 0.7833
+Quantity Log Pearson: 0.6545
+Quantity Spearman: 0.6146
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n15_run0_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n15_run0_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7454
+Mean Track Pearson: 0.7242 +/- 0.1479
+Median Track JS Distance: 0.4333
+Mean Track JS Distance: 0.4440 +/- 0.0696
+Track Directionality Pearson: 0.7925
+Quantity Log Pearson: 0.6497
+Quantity Spearman: 0.6041
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n15_run1_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n15_run1_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7431
+Mean Track Pearson: 0.7213 +/- 0.1463
+Median Track JS Distance: 0.4306
+Mean Track JS Distance: 0.4415 +/- 0.0682
+Track Directionality Pearson: 0.7933
+Quantity Log Pearson: 0.6342
+Quantity Spearman: 0.5904
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n15_run2_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n15_run2_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7321
+Mean Track Pearson: 0.7108 +/- 0.1504
+Median Track JS Distance: 0.4400
+Mean Track JS Distance: 0.4518 +/- 0.0684
+Track Directionality Pearson: 0.7878
+Quantity Log Pearson: 0.6313
+Quantity Spearman: 0.5890
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n15_run3_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n15_run3_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7361
+Mean Track Pearson: 0.7178 +/- 0.1469
+Median Track JS Distance: 0.4374
+Mean Track JS Distance: 0.4490 +/- 0.0674
+Track Directionality Pearson: 0.7912
+Quantity Log Pearson: 0.6378
+Quantity Spearman: 0.5890
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n15_run4_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n15_run4_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7513
+Mean Track Pearson: 0.7265 +/- 0.1478
+Median Track JS Distance: 0.4255
+Mean Track JS Distance: 0.4378 +/- 0.0697
+Track Directionality Pearson: 0.7916
+Quantity Log Pearson: 0.6210
+Quantity Spearman: 0.5731
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n20_run0_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n20_run0_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7503
+Mean Track Pearson: 0.7270 +/- 0.1485
+Median Track JS Distance: 0.4268
+Mean Track JS Distance: 0.4376 +/- 0.0710
+Track Directionality Pearson: 0.7917
+Quantity Log Pearson: 0.6373
+Quantity Spearman: 0.5921
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n20_run1_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n20_run1_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7577
+Mean Track Pearson: 0.7329 +/- 0.1465
+Median Track JS Distance: 0.4187
+Mean Track JS Distance: 0.4308 +/- 0.0704
+Track Directionality Pearson: 0.7994
+Quantity Log Pearson: 0.6549
+Quantity Spearman: 0.6123
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n20_run2_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n20_run2_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7471
+Mean Track Pearson: 0.7233 +/- 0.1488
+Median Track JS Distance: 0.4271
+Mean Track JS Distance: 0.4402 +/- 0.0696
+Track Directionality Pearson: 0.7956
+Quantity Log Pearson: 0.6428
+Quantity Spearman: 0.5980
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n20_run3_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n20_run3_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7577
+Mean Track Pearson: 0.7314 +/- 0.1479
+Median Track JS Distance: 0.4205
+Mean Track JS Distance: 0.4332 +/- 0.0709
+Track Directionality Pearson: 0.8017
+Quantity Log Pearson: 0.6523
+Quantity Spearman: 0.6065
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n20_run4_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n20_run4_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7504
+Mean Track Pearson: 0.7275 +/- 0.1450
+Median Track JS Distance: 0.4239
+Mean Track JS Distance: 0.4361 +/- 0.0692
+Track Directionality Pearson: 0.7917
+Quantity Log Pearson: 0.6456
+Quantity Spearman: 0.6036
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n30_run0_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n30_run0_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7781
+Mean Track Pearson: 0.7525 +/- 0.1495
+Median Track JS Distance: 0.3926
+Mean Track JS Distance: 0.4057 +/- 0.0735
+Track Directionality Pearson: 0.8007
+Quantity Log Pearson: 0.6433
+Quantity Spearman: 0.5993
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n30_run1_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n30_run1_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7836
+Mean Track Pearson: 0.7573 +/- 0.1447
+Median Track JS Distance: 0.3764
+Mean Track JS Distance: 0.3896 +/- 0.0708
+Track Directionality Pearson: 0.8104
+Quantity Log Pearson: 0.6726
+Quantity Spearman: 0.6373
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n30_run2_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n30_run2_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7786
+Mean Track Pearson: 0.7542 +/- 0.1451
+Median Track JS Distance: 0.3848
+Mean Track JS Distance: 0.3985 +/- 0.0713
+Track Directionality Pearson: 0.8109
+Quantity Log Pearson: 0.6537
+Quantity Spearman: 0.6073
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n30_run3_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n30_run3_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7700
+Mean Track Pearson: 0.7454 +/- 0.1469
+Median Track JS Distance: 0.4083
+Mean Track JS Distance: 0.4204 +/- 0.0716
+Track Directionality Pearson: 0.8052
+Quantity Log Pearson: 0.6534
+Quantity Spearman: 0.6087
+0
+python /home2/ayh8/clipnet/calculate_performance_metrics.py /home2/ayh8/predictions/clipnet_subsampling/merged_n30_run4_fold_0_predictions.h5 /home2/ayh8/data/lcl/fixed_windows/merged_procap_0.csv.gz /home2/ayh8/predictions/clipnet_subsampling/merged_n30_run4_fold_0_performance_metrics.h5
+Median Track Pearson: 0.7725
+Mean Track Pearson: 0.7440 +/- 0.1468
+Median Track JS Distance: 0.4032
+Mean Track JS Distance: 0.4154 +/- 0.0698
+Track Directionality Pearson: 0.8054
+Quantity Log Pearson: 0.6516
+Quantity Spearman: 0.6059
+0

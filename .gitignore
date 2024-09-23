@@ -1,4 +1,5 @@
 # Custom
+evaluation_qtl/plot_tiqtl_correlations.ipynb
 **/.DS_Store
 models/*/*.h5
 models/*/*/*.json

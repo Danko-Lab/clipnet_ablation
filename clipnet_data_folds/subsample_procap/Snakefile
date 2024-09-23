@@ -20,8 +20,11 @@ with open("../../data_spec/procap_to_1k_genomes.json", "r") as handle:
 with open("../../data_spec/missing_1k_genomes.txt", "r") as handle:
     missing = handle.read().splitlines()
 
+# EDIT THESE TWO LINES TO CHANGE THE SUBSAMPLED PREFIXES
 subsample_prefixes = list(
-    pd.read_csv("../subsample_prefixes_n5_run2.txt", header=None)[0]
+    pd.read_csv(
+        "../subsampled_individual_ids/subsample_prefixes_n5_run2.txt", header=None
+    )[0]
 )
 run_directory = os.path.join(OUTDIR, "subsample_data_folds_n5_run2")
 
