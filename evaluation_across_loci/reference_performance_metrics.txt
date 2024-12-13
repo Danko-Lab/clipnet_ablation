@@ -1,0 +1,8 @@
+Median Track Pearson: 0.7539
+Mean Track Pearson: 0.7195 +/- 0.1691
+Median Track JS Distance: 0.4112
+Mean Track JS Distance: 0.4214 +/- 0.0814
+Track Directionality Pearson: 0.7988
+TSS Position Pearson: 0.7366
+Quantity Log Pearson: 0.7326
+Quantity Spearman: 0.7322
