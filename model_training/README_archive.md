@@ -1,4 +1,6 @@
-# Train models for the subsample datasets
+# THESE ARE NOTES WRITTEN FOR INTERNAL (HUMAN) TRAINING PURPOSES
+
+Will probably not be useful unless you are us.
 
 ## Copy files to scratch space and rearrange to match calculate_dataset_params.py
 
