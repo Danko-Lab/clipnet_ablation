@@ -14,11 +14,11 @@ python calculate_dataset_params.py reference_data_path/ reference_model_path/
 # and reference_model_path/ is the path to where the model hyperparameters will be written to
 ```
 
-The `fit_nn.py` script can then be used to train the models. The `fit_nn.py` script will automatically save the model weights and training progress to the output directory, so you can check on the training progress at any time. It takes as input the `f*` directories created by the `calculate_dataset_params.py` script:
+The `_fit_nn.py` script can then be used to train the models. The `_fit_nn.py` script will automatically save the model weights and training progress to the output directory, so you can check on the training progress at any time. It takes as input the `f*` directories created by the `calculate_dataset_params.py` script:
 
 ```bash
 for fold in {1..9}; do
-    python fit_nn.py reference_model_path/f${fold} --gpu 0;
+    python _fit_nn.py reference_model_path/f${fold} --gpu 0;
 done
 # where reference_model_path/ is as above. --gpu 0 will train on the first GPU.
 ```

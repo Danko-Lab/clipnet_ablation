@@ -1,4 +1,12 @@
-# Evaluation of subsampled models
+# Evaluation of ablated models
+
+This directory contains notebooks for plotting prediction performance of the ablated models. This directory only covers evaluations across genomic loci (i.e., can the models reconstruct PRO-cap tracks from the reference genome). For variant effect performance, see `../evaluation_qtl/`.
+
+`plot_all_performances.ipynb` generates the main figure panels evaluating all the models.
+
+`personalized_v_reference_predictions.ipynb` generates figure panels doing paired comparisons (CLIPNET(X) vs CLIPNET_reference(X)) of the personalized and reference-trained CLIPNET models.
+
+Below I've sketched out how to generate these predictions, but this mess of a codebase should be rewritten to directly reference our Zenodo accessions.
 
 ## Prediction commands
 
@@ -21,7 +29,7 @@ for n, r in itertools.product(n_individuals, runs):
     model_dir = Path("/home2/ayh8/clipnet_subsampling/models/").joinpath(run)
     out_fp = out_dir.joinpath(f"merged_{run}_fold_0_predictions.h5")
     if not os.path.exists(out_fp):
-        cmd = f"python {clipnet_install}/predict_ensemble.py {fasta_fp} {out_fp} --model_dir {str(model_dir)} --gpu 1"
+        cmd = f"clipnet predict -f {fasta_fp} -o {out_fp} -m {str(model_dir)}"
         print(cmd)
         os.system(cmd)
     else:

@@ -1,5 +1,7 @@
 # Extracting example windows
 
+## NOT USED IN PERSONALIZED GENOMES PAPER
+
 This directory contains scripts for extracting sample windows.
 
 ```bash
