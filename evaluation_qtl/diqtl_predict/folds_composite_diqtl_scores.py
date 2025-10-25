@@ -48,8 +48,6 @@ os.makedirs(outdir, exist_ok=True)
 def calculate_scores(it):
     for fold in folds[1:]:
         l2_holdout_predictions = []
-        sum_score_holdout_predictions = []
-        sum_log_score_holdout_predictions = []
         # load data
         prefix = f"n{it[0]}_run{it[1]}_fold_{fold}"
         pred_fp = f"{prefix}_pred_per_snp_by_allele.joblib.gz"
@@ -69,41 +67,13 @@ def calculate_scores(it):
                 "pred": scores.l2_score(pred_ref_mean_tracks, pred_alt_mean_tracks),
             }
         )
-        sum_score = pd.DataFrame(
-            {
-                "expt": scores.sum_score(expt_ref_mean_tracks, expt_alt_mean_tracks),
-                "pred": scores.sum_score(pred_ref_mean_tracks, pred_alt_mean_tracks),
-            }
-        )
-        sum_log_score = pd.DataFrame(
-            {
-                "expt": scores.sum_log_score(
-                    expt_ref_mean_tracks, expt_alt_mean_tracks
-                ),
-                "pred": scores.sum_log_score(
-                    pred_ref_mean_tracks, pred_alt_mean_tracks
-                ),
-            }
-        )
         # Filter for holdout SNPs
         test = qtl_coord[qtl_coord.chrom.isin(holdouts[fold])]
         l2_holdout_predictions.append(
             l2.loc[[snp for snp in set(test["snps"]) if snp in l2.index]]
         )
-        sum_score_holdout_predictions.append(
-            sum_score.loc[[snp for snp in set(test["snps"]) if snp in sum_score.index]]
-        )
-        sum_log_score_holdout_predictions.append(
-            sum_log_score.loc[
-                [snp for snp in set(test["snps"]) if snp in sum_log_score.index]
-            ]
-        )
         l2_qtls = pd.concat(l2_holdout_predictions)
-        sum_qtls = pd.concat(sum_score_holdout_predictions)
-        sum_log_qtls = pd.concat(sum_log_score_holdout_predictions)
         l2_qtls.to_csv(os.path.join(outdir, f"{prefix}_l2_scores.csv.gz"))
-        sum_qtls.to_csv(os.path.join(outdir, f"{prefix}_sum_scores.csv.gz"))
-        sum_log_qtls.to_csv(os.path.join(outdir, f"{prefix}_sum_log_scores.csv.gz"))
 
 
 # Run in parallel
