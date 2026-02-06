@@ -2,13 +2,12 @@ import itertools
 import multiprocessing as mp
 import os
 
-import h5py
 import joblib
 import numpy as np
 import pandas as pd
 import tqdm
 
-PREDICTDIR = "/workdir/ayh8/clipnet_subsampling/tiqtl/"
+PREDICTDIR = "tiqtl/"
 
 alleles_per_ind = pd.read_csv(
     os.path.join(PREDICTDIR, "tiQTL_snps_per_individual.csv.gz"), index_col=0
@@ -20,7 +19,7 @@ snps = list(alleles_per_ind.columns)
 outdir = os.path.join(PREDICTDIR, "ensemble_predict/split_by_allele")
 os.makedirs(outdir, exist_ok=True)
 
-n_individuals = [5, 10, 15, 20, 30]
+n_individuals = [5, 10, 15, 20, 30, 40, 50]
 runs = range(5)
 
 iters = list(itertools.product(n_individuals, runs))
@@ -34,30 +33,24 @@ def split_by_allele(it):
     pred_track_out = {snps[i]: [[], [], []] for i in range(len(snps))}
     pred_quantity_out = {snps[i]: [[], [], []] for i in range(len(snps))}
     for pref in prefixes:
-        pred_fp = os.path.join(PREDICTDIR, f"ensemble_predict/{run}/{pref}.h5")
-        pred = h5py.File(pred_fp)
+        pred_fp = os.path.join(PREDICTDIR, f"ensemble_predict/{run}/{pref}.npz")
+        pred = np.load(pred_fp)
         pred_scaled = (
-            pd.DataFrame(pred["track"])
-            .divide(pd.DataFrame(pred["track"]).sum(axis=1) + 1e-3, axis=0)
-            .multiply(np.array(pred["quantity"]), axis=0)
+            pd.DataFrame(pred["arr_0"])
+            .divide(pd.DataFrame(pred["arr_0"]).sum(axis=1) + 1e-3, axis=0)
+            .multiply(np.array(pred["arr_1"]), axis=0)
         ).to_numpy()
         for i in range(len(snps)):
             allele = alleles_per_ind[snps[i]][pref]
             if allele == 0:
                 pred_tracks_per_snp_by_allele[snps[i]][0].append(pred_scaled[i])
-                pred_quantity_per_snp_by_allele[snps[i]][0].append(
-                    pred["quantity"][i][0]
-                )
+                pred_quantity_per_snp_by_allele[snps[i]][0].append(pred["arr_1"][i][0])
             elif allele == 1:
                 pred_tracks_per_snp_by_allele[snps[i]][1].append(pred_scaled[i])
-                pred_quantity_per_snp_by_allele[snps[i]][1].append(
-                    pred["quantity"][i][0]
-                )
+                pred_quantity_per_snp_by_allele[snps[i]][1].append(pred["arr_1"][i][0])
             elif allele == 0.5:
                 pred_tracks_per_snp_by_allele[snps[i]][2].append(pred_scaled[i])
-                pred_quantity_per_snp_by_allele[snps[i]][2].append(
-                    pred["quantity"][i][0]
-                )
+                pred_quantity_per_snp_by_allele[snps[i]][2].append(pred["arr_1"][i][0])
     for k in pred_tracks_per_snp_by_allele.keys():
         for i in range(len(pred_tracks_per_snp_by_allele[k])):
             pred_track_out[k][i] = np.array(pred_tracks_per_snp_by_allele[k][i])
@@ -68,5 +61,5 @@ def split_by_allele(it):
     )
 
 
-with mp.Pool(16) as pool:
+with mp.Pool(7) as pool:
     r = list(tqdm.tqdm(pool.imap(split_by_allele, iters), total=len(iters)))

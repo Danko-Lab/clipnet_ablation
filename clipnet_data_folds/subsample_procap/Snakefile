@@ -1,6 +1,11 @@
+# snakemake --printshellcmds --jobs 28 --resources load=100 --dryrun
+# snakemake --printshellcmds --jobs 28 --resources load=100
+
 import json
 import os
 import pandas as pd
+
+run_idx = "n30_run0"
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Define master rule (forces Snakemake to generate all missing files)
@@ -23,10 +28,10 @@ with open("../../data_spec/missing_1k_genomes.txt", "r") as handle:
 # EDIT THESE TWO LINES TO CHANGE THE SUBSAMPLED PREFIXES
 subsample_prefixes = list(
     pd.read_csv(
-        "../subsampled_individual_ids/subsample_prefixes_n5_run2.txt", header=None
+        f"../subsampled_individual_ids/subsample_prefixes_{run_idx}.txt", header=None
     )[0]
 )
-run_directory = os.path.join(OUTDIR, "subsample_data_folds_n5_run2")
+run_directory = os.path.join(OUTDIR, f"subsample_data_folds_{run_idx}")
 
 output = expand(
     os.path.join(run_directory, "concat_procap_{fold}.npz"),
@@ -78,7 +83,7 @@ rule procap_join_strands:
         pl=os.path.join(WORKDIR, "procap_subsample/concat/concat_pl_{fold}.csv.gz"),
         mn=os.path.join(WORKDIR, "procap_subsample/concat/concat_mn_{fold}.csv.gz"),
     resources:
-        load=25,
+        load=1,
     output:
         os.path.join(WORKDIR, "procap_subsample/final/concat_procap_{fold}.npz"),
     shell:

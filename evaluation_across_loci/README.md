@@ -10,48 +10,28 @@ Below I've sketched out how to generate these predictions, but this mess of a co
 
 ## Prediction commands
 
-```python
-import os
-import itertools
-from pathlib import Path
-
-clipnet_install = "/home2/ayh8/clipnet"
-out_dir = Path("/home2/ayh8/predictions/clipnet_subsampling")
-out_dir.mkdir(exist_ok=True, parents=True)
-fasta_fp = Path("/home2/ayh8/data/lcl/fixed_windows/").joinpath("merged_sequence_0.fna.gz")
-procap_fp = Path("/home2/ayh8/data/lcl/fixed_windows/").joinpath("merged_procap_0.npz")
-
-n_individuals = [1, 5, 10, 15, 20, 30]
-runs = range(5)
-
-for n, r in itertools.product(n_individuals, runs):
-    run = f"n{n}_run{r}"
-    model_dir = Path("/home2/ayh8/clipnet_subsampling/models/").joinpath(run)
-    out_fp = out_dir.joinpath(f"merged_{run}_fold_0_predictions.h5")
-    if not os.path.exists(out_fp):
-        cmd = f"clipnet predict -f {fasta_fp} -o {out_fp} -m {str(model_dir)}"
-        print(cmd)
-        os.system(cmd)
-    else:
-        print(f"{out_fp} exists, skipping.")
-
-for run in runs:
-    model_dir = Path("/home2/ayh8/clipnet_subsampling/models/").joinpath(run)
-    for fold in range(1, 10):
-        out_fp = out_dir.joinpath(f"fold_{fold}_{run}_fold_0_predictions.h5")
-        cmd = f"python {clipnet_install}/calculate_performance_metrics.py {model_dir.joinpath(f'f{fold}.h5')} {procap_fp} {out_fp}"
-        print(cmd)
-        os.system(cmd)
+```bash
+for run in "n40_run0" "n40_run1" "n40_run2" "n40_run3" "n40_run4" "n50_run0" "n50_run1" "n50_run2" "n50_run3" "n50_run4"; 
+    do time clipnet predict -v -f ../data/merged_sequence_0.fna.gz -o ../predictions/${run}_merged_sequence_0_predictions.npz -m ../models/${run};
+done
+for run in "n40_run0" "n40_run1" "n40_run2" "n40_run3" "n40_run4" "n50_run0" "n50_run1" "n50_run2" "n50_run3" "n50_run4"; 
+    do time clipnet predict -v -f ../data/merged_sequence_1-9.fna.gz -o ../predictions/${run}_merged_sequence_1-9_predictions.npz -m ../models/${run};
+done
 ```
 
 ## Performance metrics
 
+```bash
+for run in "n40_run0" "n40_run1" "n40_run2" "n40_run3" "n40_run4" "n50_run0" "n50_run1" "n50_run2" "n50_run3" "n50_run4"; 
+    do python calculate_performance_metrics.py -p ../predictions/${run}_merged_sequence_0_predictions.npz -e ../data/merged_procap_0.csv.gz;
+done
+```
+
 ```python
 import os
 import itertools
 from pathlib import Path
 
-clipnet_install = "/home2/ayh8/clipnet"
 out_dir = Path("/home2/ayh8/predictions/clipnet_subsampling/")
 out_dir.mkdir(exist_ok=True, parents=True)
 procap_fp = Path("/home2/ayh8/data/lcl/fixed_windows/").joinpath("merged_procap_0.csv.gz")

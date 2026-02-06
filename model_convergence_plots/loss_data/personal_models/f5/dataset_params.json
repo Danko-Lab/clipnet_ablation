@@ -1,0 +1,54 @@
+{
+    "n_samples_per_test_fold": [
+        310515
+    ],
+    "n_samples_per_train_fold": [
+        317456,
+        328622,
+        281832,
+        336752,
+        317387,
+        336799,
+        317153
+    ],
+    "n_samples_per_val_fold": [
+        305049
+    ],
+    "n_test_folds": 1,
+    "n_train_folds": 7,
+    "n_val_folds": 1,
+    "output_length": 1000,
+    "pad": 250,
+    "test_procap": [
+        "/local/adamyhe/final_data_folds/concat_procap_5.npz"
+    ],
+    "test_seq": [
+        "/local/adamyhe/final_data_folds/concat_sequence_5.npz"
+    ],
+    "train_procap": [
+        "/local/adamyhe/final_data_folds/concat_procap_1.npz",
+        "/local/adamyhe/final_data_folds/concat_procap_2.npz",
+        "/local/adamyhe/final_data_folds/concat_procap_3.npz",
+        "/local/adamyhe/final_data_folds/concat_procap_4.npz",
+        "/local/adamyhe/final_data_folds/concat_procap_7.npz",
+        "/local/adamyhe/final_data_folds/concat_procap_8.npz",
+        "/local/adamyhe/final_data_folds/concat_procap_9.npz"
+    ],
+    "train_seq": [
+        "/local/adamyhe/final_data_folds/concat_sequence_1.npz",
+        "/local/adamyhe/final_data_folds/concat_sequence_2.npz",
+        "/local/adamyhe/final_data_folds/concat_sequence_3.npz",
+        "/local/adamyhe/final_data_folds/concat_sequence_4.npz",
+        "/local/adamyhe/final_data_folds/concat_sequence_7.npz",
+        "/local/adamyhe/final_data_folds/concat_sequence_8.npz",
+        "/local/adamyhe/final_data_folds/concat_sequence_9.npz"
+    ],
+    "val_procap": [
+        "/local/adamyhe/final_data_folds/concat_procap_6.npz"
+    ],
+    "val_seq": [
+        "/local/adamyhe/final_data_folds/concat_sequence_6.npz"
+    ],
+    "weight": 0.002,
+    "window_length": 1000
+}

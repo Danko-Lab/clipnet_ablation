@@ -4,6 +4,6 @@
     "REFDIR": "/fs/cbsubscb17/storage/data",
     "PROJDIR": "/fs/cbsubscb17/storage/projects/CLIPNET/",
     "DATADIR": "/fs/cbsubscb17/storage/projects/CLIPNET/data/gse110638/",
-    "OUTDIR": "/fs/cbsubscb17/storage/projects/CLIPNET_subsampling/",
+    "OUTDIR": "/fs/cbsubscb17/storage/projects/CLIPNET_ablation/subsampled_data/",
     "FOLDS": 10
 }

@@ -1,6 +1,7 @@
 import itertools
 import json
 import os
+import time  # noqa
 from pathlib import Path
 
 file_name_hash = "../../data_spec/procap_to_1k_genomes.json"
@@ -15,24 +16,25 @@ nonempty_procap_prefixes = [
     prefix for prefix in procap_prefixes if d[prefix] not in missing
 ]
 
-predict_dir = Path("/mnt/i/clipnet_data/tiqtl/ensemble_predict")
+predict_dir = Path("../../predictions/tiqtl/ensemble_predict")
 predict_dir.mkdir(exist_ok=True, parents=True)
 
-clipnet_install = "~/github/clipnet"
-n_individuals = [5, 10, 15, 20, 30]
+n_individuals = [5, 10, 15, 20, 30, 40, 50]
 run = range(5)
 for n, r in itertools.product(n_individuals, run):
     model_dir = Path(f"../../models/n{n}_run{r}/")
     outdir = Path(predict_dir, f"n{n}_run{r}")
     outdir.mkdir(exist_ok=True, parents=True)
     for prefix in nonempty_procap_prefixes:
-        output = os.path.join(outdir, f"{prefix}.h5")
+        output = os.path.join(outdir, f"{prefix}.npz")
         if not os.path.exists(output):
-            sequence = os.path.join(
-                "../../../clipnet_data/tiqtl/sequence", f"{prefix}.fna.gz"
+            sequence = os.path.join("../../data/tiqtl/sequence", f"{prefix}.fna.gz")
+            cmd = (
+                f"clipnet predict -v -f {sequence} -o {output} -m {model_dir} --gpu -1"
             )
-            cmd = f"clipnet predict -f {sequence} -o {output} -m {model_dir}"
-            os.system(f"echo {cmd}")
-            os.system(cmd)
+            print(cmd)
+            # os.system(cmd)
+            # time.sleep(1)
         else:
-            print(f"{output} exists, skipping.")
+            # print(f"{output} exists, skipping.")
+            pass

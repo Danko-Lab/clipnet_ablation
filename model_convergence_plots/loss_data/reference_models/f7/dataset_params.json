@@ -1,0 +1,54 @@
+{
+    "n_samples_per_test_fold": [
+        317387
+    ],
+    "n_samples_per_train_fold": [
+        317456,
+        328622,
+        281832,
+        336752,
+        310515,
+        305049,
+        317153
+    ],
+    "n_samples_per_val_fold": [
+        336799
+    ],
+    "n_test_folds": 1,
+    "n_train_folds": 7,
+    "n_val_folds": 1,
+    "output_length": 1000,
+    "pad": 250,
+    "test_procap": [
+        "../data/lcl/final_data_folds/concat_procap_7.npz"
+    ],
+    "test_seq": [
+        "../data/lcl/final_data_folds/concat_sequence_reference_7.npz"
+    ],
+    "train_procap": [
+        "../data/lcl/final_data_folds/concat_procap_1.npz",
+        "../data/lcl/final_data_folds/concat_procap_2.npz",
+        "../data/lcl/final_data_folds/concat_procap_3.npz",
+        "../data/lcl/final_data_folds/concat_procap_4.npz",
+        "../data/lcl/final_data_folds/concat_procap_5.npz",
+        "../data/lcl/final_data_folds/concat_procap_6.npz",
+        "../data/lcl/final_data_folds/concat_procap_9.npz"
+    ],
+    "train_seq": [
+        "../data/lcl/final_data_folds/concat_sequence_reference_1.npz",
+        "../data/lcl/final_data_folds/concat_sequence_reference_2.npz",
+        "../data/lcl/final_data_folds/concat_sequence_reference_3.npz",
+        "../data/lcl/final_data_folds/concat_sequence_reference_4.npz",
+        "../data/lcl/final_data_folds/concat_sequence_reference_5.npz",
+        "../data/lcl/final_data_folds/concat_sequence_reference_6.npz",
+        "../data/lcl/final_data_folds/concat_sequence_reference_9.npz"
+    ],
+    "val_procap": [
+        "../data/lcl/final_data_folds/concat_procap_8.npz"
+    ],
+    "val_seq": [
+        "../data/lcl/final_data_folds/concat_sequence_reference_8.npz"
+    ],
+    "weight": 0.002,
+    "window_length": 1000
+}
