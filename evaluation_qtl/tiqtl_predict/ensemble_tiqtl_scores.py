@@ -69,7 +69,7 @@ def calculate_scores(it):
 
 
 # Calculate scores for each iteration
-n_individuals = [5, 10, 15, 20, 30, 40, 50]
+n_individuals = [5, 10, 15, 20, 30]
 runs = range(5)
 
 iters = list(itertools.product(n_individuals, runs))
@@ -78,7 +78,7 @@ with mp.Pool(10) as pool:
     r = list(tqdm.tqdm(pool.imap(calculate_scores, iters), total=len(iters)))
 
 
-from scipy.stats import pearsonr, spearmanr
+from scipy.stats import pearsonr
 
 samp = []
 corr = []
@@ -89,4 +89,4 @@ for it in iters:
     samp.append(it[0])
     corr.append(pearsonr(df["expt"], df["pred"])[0])
 
-spearmanr(samp, corr)
+pearsonr(samp[:25], corr[:25])

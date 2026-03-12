@@ -19,19 +19,17 @@ nonempty_procap_prefixes = [
 predict_dir = Path("../../predictions/tiqtl/ensemble_predict")
 predict_dir.mkdir(exist_ok=True, parents=True)
 
-n_individuals = [5, 10, 15, 20, 30, 40, 50]
+n_individuals = [5, 10, 15, 20, 30]
 run = range(5)
 for n, r in itertools.product(n_individuals, run):
     model_dir = Path(f"../../models/n{n}_run{r}/")
     outdir = Path(predict_dir, f"n{n}_run{r}")
     outdir.mkdir(exist_ok=True, parents=True)
     for prefix in nonempty_procap_prefixes:
-        output = os.path.join(outdir, f"{prefix}.npz")
+        output = os.path.join(outdir, f"{prefix}.h5")
         if not os.path.exists(output):
             sequence = os.path.join("../../data/tiqtl/sequence", f"{prefix}.fna.gz")
-            cmd = (
-                f"clipnet predict -v -f {sequence} -o {output} -m {model_dir} --gpu -1"
-            )
+            cmd = f"python ../_predict_ensemble.py {sequence} {output} --model_dir {model_dir}"
             print(cmd)
             # os.system(cmd)
             # time.sleep(1)

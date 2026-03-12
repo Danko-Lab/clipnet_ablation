@@ -22,7 +22,7 @@ folds = range(1, 10)
 predict_dir = Path("../../predictions/tiqtl/fold_predict")
 predict_dir.mkdir(exist_ok=True, parents=True)
 
-n_individuals = [5, 10, 15, 20, 30, 40, 50]
+n_individuals = [5, 10, 15, 20, 30]
 run = range(5)
 for n, r, fold in itertools.product(n_individuals, run, folds):
     model_dir = Path(f"../../models/n{n}_run{r}/")
@@ -34,10 +34,10 @@ for n, r, fold in itertools.product(n_individuals, run, folds):
     outdir = Path(predict_dir, f"n{n}_run{r}/fold_{fold}")
     outdir.mkdir(exist_ok=True, parents=True)
     for prefix in nonempty_procap_prefixes:
-        output = os.path.join(outdir, f"{prefix}.npz")
+        output = os.path.join(outdir, f"{prefix}.h5")
         if not os.path.exists(output):
             sequence = f"../../data/tiqtl/sequence/{prefix}.fna.gz"
-            cmd = f"clipnet predict -v -f {sequence} -o {output} -m {model_fp} --gpu -1"
+            cmd = f"python ../_predict_individual.py {model_fp} {sequence} {output}"
             print(cmd)
             # os.system(cmd)
             # time.sleep(1)

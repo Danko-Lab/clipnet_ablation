@@ -63,11 +63,22 @@ def calculate_scores(it):
     l2.index = expt_ref_mean_tracks.index
     l2.to_csv(os.path.join(outdir, f"{prefix}_l2_scores.csv.gz"))
 
+
 # Calculate scores for each iteration
-n_individuals = [5, 10, 15, 20, 30, 40, 50]
+n_individuals = [5, 10, 15, 20, 30]
 runs = range(5)
 
 iters = list(itertools.product(n_individuals, runs))
 
 with mp.Pool(10) as pool:
     r = list(tqdm.tqdm(pool.imap(calculate_scores, iters), total=len(iters)))
+
+from scipy.stats import pearsonr
+
+samp, corr = [], []
+for it in iters:
+    df = pd.read_csv(os.path.join(outdir, f"n{it[0]}_run{it[1]}_l2_scores.csv.gz"))
+    samp.append(it[0])
+    corr.append(pearsonr(df["expt"], df["pred"])[0])
+
+pearsonr(samp[:25], corr[:25])

@@ -68,7 +68,7 @@ def calculate_scores(it):
         l2_qtls.to_csv(os.path.join(outdir, f"{prefix}_l2_scores.csv.gz"))
 
 
-n_individuals = [5, 10, 15, 20, 30, 40, 50]
+n_individuals = [5, 10, 15, 20, 30]
 runs = range(5)
 
 iters = list(itertools.product(n_individuals, runs))
