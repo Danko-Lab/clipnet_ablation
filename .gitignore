@@ -4,6 +4,7 @@ evaluation_qtl/plot_tiqtl_correlations.ipynb
 models/*/*.h5
 models/*/*/*.json
 data/*
+modisco/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

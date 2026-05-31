@@ -1,5 +1,3 @@
-# snakemake --printshellcmds --reason --jobs 24 --resources load=100
-
 import json
 import os
 
@@ -28,16 +26,21 @@ nonempty_procap_prefixes = [
 ]
 
 output = expand(
-    os.path.join(DATADIR, "procap/individual_windows/{prefix}.{pm}.{fold}.csv.gz"),
+    os.path.join(DATADIR, "procap/individual_windows_mean/{prefix}.{pm}.{fold}.csv.gz"),
     prefix=nonempty_procap_prefixes,
     pm=["pl", "mn"],
     fold=range(FOLDS),
+)
+output_npz = expand(
+    os.path.join(DATADIR, "final_data_folds/concat_mean_procap_{tail}.npz"),
+    tail=range(FOLDS),
 )
 
 
 rule procap_all:  # A master rule that ensures all the other rules run
     input:
         output,
+        output_npz,
     params:
         os.path.join(WORKDIR, "procap"),
     shell:
@@ -51,9 +54,9 @@ rule procap_all:  # A master rule that ensures all the other rules run
 
 rule unpack_procap:
     input:
-        os.path.join(DATADIR, "procap/bigwig/{prefix}.{pm}.bw"),
+        os.path.join(DATADIR, "procap/bigwig/merged_{pm}_rpm.bw"),
     output:
-        os.path.join(WORKDIR, "procap/bigwig/{prefix}.{pm}.bw"),
+        os.path.join(WORKDIR, "procap/bigwig/merged_{pm}_rpm.bw"),
     resources:
         load=1,
     shell:
@@ -79,7 +82,7 @@ rule unpack_windows:
 rule procap_get_signal:
     input:
         windows=os.path.join(WORKDIR, "procap/windows/{prefix}_window_uniq.bed"),
-        bw=os.path.join(WORKDIR, "procap/bigwig/{prefix}.{pm}.bw"),
+        bw=os.path.join(WORKDIR, "procap/bigwig/merged_{pm}_rpm.bw"),
     output:
         os.path.join(WORKDIR, "procap/windows/signal/{prefix}.{pm}.txt.gz"),
     resources:
@@ -119,7 +122,7 @@ rule procap_split_signal:
         os.path.join(WORKDIR, "procap/windows/signal/{prefix}.{pm}.csv.gz"),
     output:
         fold=os.path.join(
-            DATADIR, "procap/individual_windows/{prefix}.{pm}.{fold}.csv.gz"
+            DATADIR, "procap/individual_windows_mean/{prefix}.{pm}.{fold}.csv.gz"
         ),
     resources:
         load=1,
@@ -140,3 +143,72 @@ rule procap_split_signal:
             [data.loc[idx] for idx in data.index if idx.split(":")[0] in chroms]
         )
         fold.to_csv(output[0], header=False, index=True, compression="gzip")
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Concatenate data between individuals
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_concat:
+    input:
+        [
+            os.path.join(DATADIR, "procap/individual_windows_mean/%s.{pm}.{fold}.csv.gz")
+            % prefix
+            for prefix in nonempty_procap_prefixes
+        ],
+    output:
+        os.path.join(WORKDIR, "procap/concat/concat_{pm}_{fold}.csv.gz"),
+    resources:
+        load=1,
+    shell:
+        "zcat {input} | gzip > {output}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Replace window coords with index #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_idx_csv:
+    input:
+        os.path.join(WORKDIR, "procap/concat/concat_{pm}_{fold}.csv.gz"),
+    output:
+        os.path.join(WORKDIR, "procap/concat/idx/concat_{pm}_{fold}.csv.gz"),
+    resources:
+        load=1,
+    shell:
+        "zcat {input} | bash ../../data_processing_scripts/idx_csv.sh | gzip > {output}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Join pl and mn strand signal
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_join_strands:
+    input:
+        pl=os.path.join(WORKDIR, "procap/concat/concat_pl_{fold}.csv.gz"),
+        mn=os.path.join(WORKDIR, "procap/concat/concat_mn_{fold}.csv.gz"),
+    output:
+        os.path.join(WORKDIR, "procap/final/concat_mean_procap_{fold}.npz"),
+    resources:
+        load=25,
+    shell:
+        "python ../../data_processing_scripts/join_signal.py {input} --in_csv {output}"
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Clean up scratch space
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+rule procap_move_back:
+    input:
+        os.path.join(WORKDIR, "procap/final/concat_mean_procap_{tail}.npz"),
+    output:
+        os.path.join(DATADIR, "final_data_folds/concat_mean_procap_{tail}.npz"),
+    resources:
+        load=1,
+    shell:
+        "cp {input} {output}"

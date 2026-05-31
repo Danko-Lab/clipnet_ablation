@@ -1,3 +1,8 @@
+# Download files from ftp_location.txt:
+# ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000_genomes_project/release/20190312_biallelic_SNV_and_INDEL/
+# ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/
+# snakemake --printshellcmds --reason --jobs 24 --resources load=100
+
 import json
 import os
 
@@ -59,10 +64,10 @@ rule sequence_all:  # A master rule that ensures all the other rules run
 rule unpack_reference_sequences:
     input:
         os.path.join(REFDIR, "hg38/hg38.2bit"),
-    resources:
-        load=1,
     output:
         os.path.join(WORKDIR, "hg38.fasta"),
+    resources:
+        load=1,
     shell:
         "twoBitToFa {input} {output}"
 
@@ -70,10 +75,10 @@ rule unpack_reference_sequences:
 rule unpack_procap_windows:
     input:
         os.path.join(DATADIR, "procap/windows/{prefix}_window_uniq.bed.gz"),
-    resources:
-        load=1,
     output:
         os.path.join(WORKDIR, "sequence/procap/{prefix}_window_uniq.bed"),
+    resources:
+        load=1,
     shell:
         "zcat {input} > {output}"
 
@@ -90,20 +95,20 @@ rule get_sequence_windows:
             os.path.join(WORKDIR, "sequence/procap/%s_window_uniq.bed" % prefix)
             for prefix in nonempty_procap_prefixes
         ],
+    output:
+        [
+            os.path.join(WORKDIR, "sequence/windows/%s.fna") % prefix
+            for prefix in nonempty_procap_prefixes
+        ],
+    resources:
+        load=100,
+        threads=32,
     params:
         bed_dir=os.path.join(WORKDIR, "sequence/procap"),
         fa_dir=os.path.join(WORKDIR, "sequence/consensus"),
         out_dir=os.path.join(WORKDIR, "sequence/windows"),
         file_prefix_hash_fp=file_prefix_hash_fp,
         missing_fp=missing_fp,
-    resources:
-        load=100,
-        threads=32,
-    output:
-        [
-            os.path.join(WORKDIR, "sequence/windows/%s.fna") % prefix
-            for prefix in nonempty_procap_prefixes
-        ],
     shell:
         """
         python ../../data_processing_scripts/get_reference_sequence_windows.py \
@@ -141,15 +146,15 @@ rule add_individual_id_to_header:
 rule split_sequence:
     input:
         fna=os.path.join(WORKDIR, "sequence/windows/full_header/{prefix}.fna.gz"),
+    output:
+        fna=os.path.join(
+            DATADIR, "sequence/reference_sequence_folds/{prefix}_{fold}.fna.gz"
+        ),
     resources:
         load=1,
     params:
         fold_assignments=fold_assignments,
         fold="{fold}",
-    output:
-        fna=os.path.join(
-            DATADIR, "sequence/reference_sequence_folds/{prefix}_{fold}.fna.gz"
-        ),
     run:
         from Bio import SeqIO, bgzf
         import gzip
