@@ -52,6 +52,7 @@ EPOCH_RE = re.compile(r"_epoch_(\d+)\.h(?:5|df5)$")
 FOLD_DIR_RE = re.compile(r"^(?:f|fold_?)(\d+)$")
 FOLD_FILE_RE = re.compile(r"(?:^|_)fold_?(\d+)(?:_|\.|$)")
 PROFILE_PSEUDOCOUNT = 1e-3
+L2_LOG_PSEUDOCOUNT = 1e-6
 
 
 def parse_ints(value):
@@ -556,11 +557,16 @@ def l2_score(x, y):
     return np.sqrt(np.sum(np.square(x - y), axis=1).astype(np.float32))
 
 
+def log_l2_values(values):
+    values = np.asarray(values, dtype=np.float64)
+    return np.where(values >= 0, np.log(values + L2_LOG_PSEUDOCOUNT), np.nan)
+
+
 def finite_correlation(x, y, method):
     finite = np.isfinite(x) & np.isfinite(y)
     if finite.sum() < 2:
         return np.nan
-    return pd.Series(x[finite]).corr(pd.Series(y[finite]), method=method)
+    return correlation(x[finite], y[finite], method)
 
 
 def strict_correlation(x, y, method):
@@ -568,7 +574,56 @@ def strict_correlation(x, y, method):
         return np.nan
     if len(x) < 2:
         return np.nan
-    return pd.Series(x).corr(pd.Series(y), method=method)
+    return correlation(x, y, method)
+
+
+def correlation(x, y, method):
+    x_series = pd.Series(x)
+    y_series = pd.Series(y)
+    if method == "spearman":
+        x_series = x_series.rank()
+        y_series = y_series.rank()
+    return x_series.corr(y_series, method="pearson")
+
+
+def summarize_scores(args, epoch, scores, fold, aggregation):
+    expt_values = scores["expt"].to_numpy()
+    pred_values = scores["pred"].to_numpy()
+    expt_log_values = (
+        scores["expt_log_l2"].to_numpy()
+        if "expt_log_l2" in scores
+        else log_l2_values(expt_values)
+    )
+    pred_log_values = (
+        scores["pred_log_l2"].to_numpy()
+        if "pred_log_l2" in scores
+        else log_l2_values(pred_values)
+    )
+    finite = np.isfinite(expt_log_values) & np.isfinite(pred_log_values)
+
+    return {
+        "mode": args.mode,
+        "aggregation": aggregation,
+        "epoch": epoch,
+        "fold": fold,
+        "n_snps": scores.shape[0],
+        "n_valid_snps": int(finite.sum()),
+        "n_invalid_snps": int((~finite).sum()),
+        "l2_pearson": strict_correlation(expt_log_values, pred_log_values, "pearson"),
+        "l2_spearman": strict_correlation(expt_values, pred_values, "spearman"),
+        "l2_pearson_valid": finite_correlation(expt_log_values, pred_log_values, "pearson"),
+        "l2_spearman_valid": finite_correlation(expt_values, pred_values, "spearman"),
+        "raw_l2_pearson": strict_correlation(expt_values, pred_values, "pearson"),
+        "raw_l2_pearson_valid": finite_correlation(expt_values, pred_values, "pearson"),
+        "pred_l2_mean": scores["pred"].mean(),
+        "pred_l2_std": scores["pred"].std(),
+        "expt_l2_mean": scores["expt"].mean(),
+        "expt_l2_std": scores["expt"].std(),
+        "pred_log_l2_mean": np.nanmean(pred_log_values),
+        "pred_log_l2_std": np.nanstd(pred_log_values, ddof=1),
+        "expt_log_l2_mean": np.nanmean(expt_log_values),
+        "expt_log_l2_std": np.nanstd(expt_log_values, ddof=1),
+    }
 
 
 def load_experimental_tracks(args):
@@ -635,6 +690,8 @@ def score_epoch(args, epoch, snps, expt_ref, expt_alt, qtl_coord, fold=None):
             },
             index=expt_ref.index,
         )
+        scores["expt_log_l2"] = log_l2_values(scores["expt"].to_numpy())
+        scores["pred_log_l2"] = log_l2_values(scores["pred"].to_numpy())
         qtl_index = qtl_coord.set_index("snps")
         scores["chrom"] = qtl_index.loc[scores.index, "chrom"]
         scores["start"] = qtl_index.loc[scores.index, "start"]
@@ -644,24 +701,22 @@ def score_epoch(args, epoch, snps, expt_ref, expt_alt, qtl_coord, fold=None):
         out_fp.parent.mkdir(parents=True, exist_ok=True)
         scores.to_csv(out_fp)
 
-    expt_values = scores["expt"].to_numpy()
-    pred_values = scores["pred"].to_numpy()
-    finite = np.isfinite(expt_values) & np.isfinite(pred_values)
+    aggregation = "ensemble" if fold is None else "fold"
+    return summarize_scores(args, epoch, scores, np.nan if fold is None else fold, aggregation)
 
-    return {
-        "mode": args.mode,
-        "epoch": epoch,
-        "fold": np.nan if fold is None else fold,
-        "n_snps": scores.shape[0],
-        "n_valid_snps": int(finite.sum()),
-        "n_invalid_snps": int((~finite).sum()),
-        "l2_pearson": strict_correlation(expt_values, pred_values, "pearson"),
-        "l2_spearman": strict_correlation(expt_values, pred_values, "spearman"),
-        "l2_pearson_valid": finite_correlation(expt_values, pred_values, "pearson"),
-        "l2_spearman_valid": finite_correlation(expt_values, pred_values, "spearman"),
-        "pred_l2_mean": scores["pred"].mean(),
-        "expt_l2_mean": scores["expt"].mean(),
-    }
+
+def score_fold_epoch_pooled(args, epoch, folds):
+    fold_scores = []
+    for fold in folds:
+        fold_fp = fold_score_path(args, epoch, fold)
+        if fold_fp.exists():
+            fold_score = pd.read_csv(fold_fp, index_col=0)
+            fold_score["fold"] = fold
+            fold_scores.append(fold_score)
+    if not fold_scores:
+        return None
+    pooled_scores = pd.concat(fold_scores)
+    return summarize_scores(args, epoch, pooled_scores, "pooled", "pooled_folds")
 
 
 def run_score(args):
@@ -687,6 +742,9 @@ def run_score(args):
                             args, epoch, snps, expt_ref, expt_alt, qtl_coord, fold=fold
                         )
                     )
+            pooled_row = score_fold_epoch_pooled(args, epoch, folds)
+            if pooled_row is not None:
+                summary_rows.append(pooled_row)
 
     out_fp = summary_path(args)
     out_fp.parent.mkdir(parents=True, exist_ok=True)
