@@ -1,19 +1,12 @@
 #!/usr/bin/env python3
 
 """
-Benchmark training epoch checkpoints on QTL prediction.
+Benchmark stable best-model checkpoints on QTL prediction.
 
-Given one model training run root, this script discovers fold-specific epoch
-checkpoints, predicts either fold-averaged epoch ensembles or individual fold
-checkpoints, splits predictions by allele, and scores predicted QTL effect sizes
-against experimental QTL effects.
-
-time python benchmark_epoch_checkpoints.py all \
-    ../models/mean_model/ \
-    --qtl tiqtl \
-    --predictions_root ../predictions/mean_model/tiqtl/ \
-    --data_root ../data/ --qtl_data_dir ../data/tiqtl/ \
-    --gpu
+Given one model training run root, this script discovers fold-specific best
+checkpoints, predicts either fold-averaged best-model ensembles or individual
+fold checkpoints, splits predictions by allele, and scores predicted QTL effect
+sizes against experimental QTL effects.
 """
 
 import argparse
@@ -65,7 +58,7 @@ QTL_CONFIG = {
     },
 }
 
-EPOCH_RE = re.compile(r"_epoch_(\d+)\.h(?:5|df5)$")
+BEST_RE = re.compile(r"_(resume_)?best\.h(?:5|df5)$")
 FOLD_DIR_RE = re.compile(r"^(?:f|fold_?)(\d+)$")
 FOLD_FILE_RE = re.compile(r"(?:^|_)fold_?(\d+)(?:_|\.|$)")
 PROFILE_PSEUDOCOUNT = 1e-3
@@ -104,13 +97,7 @@ def parse_args():
         "--mode",
         choices=["ensemble", "folds"],
         default="ensemble",
-        help="Inference mode. 'ensemble' averages folds per epoch; 'folds' scores folds separately.",
-    )
-    parser.add_argument(
-        "--epochs",
-        type=parse_ints,
-        default=None,
-        help="Comma-separated epochs to benchmark. Defaults to all discovered epochs.",
+        help="Inference mode. 'ensemble' averages fold best checkpoints; 'folds' scores folds separately.",
     )
     parser.add_argument(
         "--folds",
@@ -121,7 +108,17 @@ def parse_args():
     parser.add_argument(
         "--allow_missing_folds",
         action="store_true",
-        help="Benchmark epochs even if some selected folds are missing.",
+        help="Benchmark best checkpoints even if some selected folds are missing.",
+    )
+    parser.add_argument(
+        "--best_variant",
+        choices=["auto", "fresh", "resume"],
+        default="auto",
+        help=(
+            "Which stable best checkpoint to use. 'fresh' selects *_best.h5/.hdf5, "
+            "'resume' selects *_resume_best.h5/.hdf5, and 'auto' errors if both "
+            "exist for the same fold."
+        ),
     )
     parser.add_argument(
         "--data_root",
@@ -222,7 +219,7 @@ def qtl_data_dir(args):
 
 def benchmark_root(args):
     run_name = args.run_name or args.model_root.resolve().name
-    return args.predictions_root / args.qtl / "epoch_checkpoint_benchmark" / run_name
+    return args.predictions_root / args.qtl / "best_model_benchmark" / run_name
 
 
 def output_root(args):
@@ -342,11 +339,11 @@ def prediction_row_order(pred_fp, snps, allow_row_order=False):
     return rows
 
 
-def checkpoint_epoch(path):
-    match = EPOCH_RE.search(path.name)
+def checkpoint_variant(path):
+    match = BEST_RE.search(path.name)
     if match is None:
         return None
-    return int(match.group(1))
+    return "resume" if match.group(1) else "fresh"
 
 
 def checkpoint_fold(path, model_root):
@@ -374,122 +371,124 @@ def discover_checkpoints(args):
     if not model_root.exists():
         raise FileNotFoundError(f"Model root does not exist: {model_root}")
 
-    checkpoints = defaultdict(dict)
+    checkpoints_by_fold = defaultdict(dict)
     for model_fp in sorted(
         list(model_root.rglob("*.h5")) + list(model_root.rglob("*.hdf5"))
     ):
-        epoch = checkpoint_epoch(model_fp)
-        if epoch is None:
+        variant = checkpoint_variant(model_fp)
+        if variant is None:
             continue
         fold = checkpoint_fold(model_fp, model_root)
         if args.folds is not None and fold not in args.folds:
             continue
-        if fold in checkpoints[epoch]:
+        if variant in checkpoints_by_fold[fold]:
             raise ValueError(
-                "Multiple checkpoints found for "
-                f"epoch {epoch}, fold {fold}: {checkpoints[epoch][fold]} and {model_fp}"
+                f"Multiple {variant} best checkpoints found for fold {fold}: "
+                f"{checkpoints_by_fold[fold][variant]} and {model_fp}"
             )
-        checkpoints[epoch][fold] = model_fp
+        checkpoints_by_fold[fold][variant] = model_fp
+
+    checkpoints = {}
+    for fold, variants in checkpoints_by_fold.items():
+        if args.best_variant == "auto":
+            if len(variants) > 1:
+                raise ValueError(
+                    f"Both fresh and resume best checkpoints found for fold {fold}: "
+                    f"{variants}. Use --best_variant fresh or --best_variant resume."
+                )
+            checkpoints[fold] = next(iter(variants.values()))
+        elif args.best_variant in variants:
+            checkpoints[fold] = variants[args.best_variant]
 
     if not checkpoints:
         raise FileNotFoundError(
-            f"No epoch checkpoints matching *_epoch_###.h5/.hdf5 found under {model_root}"
+            f"No {args.best_variant} best checkpoints matching *_best.h5/.hdf5 "
+            f"or *_resume_best.h5/.hdf5 found under {model_root}"
         )
     return checkpoints
-
-
-def selected_epochs(args, checkpoints):
-    epochs = sorted(checkpoints) if args.epochs is None else args.epochs
-    missing = [epoch for epoch in epochs if epoch not in checkpoints]
-    if missing:
-        raise FileNotFoundError(f"No checkpoints found for epochs: {missing}")
-    return epochs
 
 
 def selected_folds(args, checkpoints):
     if args.folds is not None:
         return args.folds
-    folds = set()
-    for epoch_checkpoints in checkpoints.values():
-        folds.update(epoch_checkpoints)
-    return sorted(folds, key=str)
+    return sorted(checkpoints, key=str)
 
 
-def epoch_checkpoint_paths(args, checkpoints, epoch, folds):
-    missing = [fold for fold in folds if fold not in checkpoints[epoch]]
+def checkpoint_paths(args, checkpoints, folds):
+    missing = [fold for fold in folds if fold not in checkpoints]
     if missing and not args.allow_missing_folds:
         raise FileNotFoundError(
-            f"Epoch {epoch} is missing checkpoints for folds: {missing}. "
+            f"Best-model checkpoints are missing for folds: {missing}. "
             "Use --allow_missing_folds to average available folds only."
         )
-    return [checkpoints[epoch][fold] for fold in folds if fold in checkpoints[epoch]]
+    return [checkpoints[fold] for fold in folds if fold in checkpoints]
 
 
-def prediction_path(args, epoch, prefix):
-    root = output_root(args) / "predictions" / f"epoch_{epoch:03d}"
+def prediction_path(args, prefix):
+    root = output_root(args) / "predictions" / "best_model"
     return root / f"{prefix}.h5"
 
 
-def fold_prediction_path(args, epoch, fold, prefix):
+def fold_prediction_path(args, fold, prefix):
     root = (
         output_root(args)
         / "predictions"
-        / f"epoch_{epoch:03d}"
+        / "best_model"
         / f"fold_{fold}"
     )
     return root / f"{prefix}.h5"
 
 
-def split_path(args, epoch):
+def split_path(args):
     return (
         output_root(args)
         / "split_by_allele"
-        / f"epoch_{epoch:03d}_pred_per_snp_by_allele.joblib.gz"
+        / "best_model_pred_per_snp_by_allele.joblib.gz"
     )
 
 
-def ensemble_split_path(args, epoch):
+def ensemble_split_path(args):
     return (
         benchmark_root(args)
         / "split_by_allele"
-        / f"epoch_{epoch:03d}_pred_per_snp_by_allele.joblib.gz"
+        / "best_model_pred_per_snp_by_allele.joblib.gz"
     )
 
 
-def fold_split_path(args, epoch, fold):
+def fold_split_path(args, fold):
     return (
         output_root(args)
         / "split_by_allele"
-        / f"epoch_{epoch:03d}_fold_{fold}_pred_per_snp_by_allele.joblib.gz"
+        / f"best_model_fold_{fold}_pred_per_snp_by_allele.joblib.gz"
     )
 
 
-def score_path(args, epoch):
+def score_path(args):
     return (
         output_root(args)
         / "scores"
-        / f"epoch_{epoch:03d}_l2_scores.csv.gz"
+        / "best_model_l2_scores.csv.gz"
     )
 
 
-def ensemble_score_path(args, epoch):
+def ensemble_score_path(args):
     return (
         benchmark_root(args)
         / "scores"
-        / f"epoch_{epoch:03d}_l2_scores.csv.gz"
+        / "best_model_l2_scores.csv.gz"
     )
 
 
-def fold_score_path(args, epoch, fold):
+def fold_score_path(args, fold):
     return (
         output_root(args)
         / "scores"
-        / f"epoch_{epoch:03d}_fold_{fold}_l2_scores.csv.gz"
+        / f"best_model_fold_{fold}_l2_scores.csv.gz"
     )
 
 
 def summary_path(args):
-    return output_root(args) / "epoch_qtl_benchmark_summary.csv"
+    return output_root(args) / "best_model_qtl_benchmark_summary.csv"
 
 
 def configure_prediction_runtime(args):
@@ -569,61 +568,59 @@ def run_predict(args):
     allele_matrix = load_allele_matrix(args)
     prefixes = selected_prefixes(args, allele_matrix)
     checkpoints = discover_checkpoints(args)
-    epochs = selected_epochs(args, checkpoints)
     folds = selected_folds(args, checkpoints)
     sequence_root = args.data_root / args.qtl / "sequence"
     nn = create_predictor(args)
+    selected_checkpoint_paths = checkpoint_paths(args, checkpoints, folds)
 
-    for epoch in epochs:
-        checkpoint_paths = epoch_checkpoint_paths(args, checkpoints, epoch, folds)
+    if args.mode == "ensemble":
+        print(f"Best model: averaging {len(selected_checkpoint_paths)} fold checkpoints.")
+    else:
+        print(f"Best model: predicting {len(selected_checkpoint_paths)} fold checkpoints.")
+
+    for prefix in tqdm.tqdm(prefixes, desc="Predicting best model"):
+        sequence_fp = sequence_root / f"{prefix}.fna.gz"
+        sequence_ids = None if args.dry_run else fasta_sequence_ids(sequence_fp)
         if args.mode == "ensemble":
-            print(f"Epoch {epoch}: averaging {len(checkpoint_paths)} fold checkpoints.")
+            output_fp = prediction_path(args, prefix)
+            if args.dry_run:
+                print(f"predict {selected_checkpoint_paths} {sequence_fp} -> {output_fp}")
+                continue
+            if args.skip_existing and output_fp.exists():
+                continue
+            output_fp.parent.mkdir(parents=True, exist_ok=True)
+            profile, quantity = average_predictions(
+                nn, selected_checkpoint_paths, sequence_fp, args
+            )
+            write_prediction_h5(
+                output_fp,
+                profile,
+                quantity,
+                args.compression,
+                track_is_scaled=True,
+                sequence_ids=sequence_ids,
+            )
         else:
-            print(f"Epoch {epoch}: predicting {len(checkpoint_paths)} fold checkpoints.")
-
-        for prefix in tqdm.tqdm(prefixes, desc=f"Predicting epoch {epoch}"):
-            sequence_fp = sequence_root / f"{prefix}.fna.gz"
-            sequence_ids = None if args.dry_run else fasta_sequence_ids(sequence_fp)
-            if args.mode == "ensemble":
-                output_fp = prediction_path(args, epoch, prefix)
+            for fold in folds:
+                if fold not in checkpoints:
+                    continue
+                output_fp = fold_prediction_path(args, fold, prefix)
+                checkpoint_fp = checkpoints[fold]
                 if args.dry_run:
-                    print(f"predict {checkpoint_paths} {sequence_fp} -> {output_fp}")
+                    print(f"predict {checkpoint_fp} {sequence_fp} -> {output_fp}")
                     continue
                 if args.skip_existing and output_fp.exists():
                     continue
                 output_fp.parent.mkdir(parents=True, exist_ok=True)
-                profile, quantity = average_predictions(
-                    nn, checkpoint_paths, sequence_fp, args
-                )
+                profile, quantity = predict_checkpoint(nn, checkpoint_fp, sequence_fp)
                 write_prediction_h5(
                     output_fp,
                     profile,
                     quantity,
                     args.compression,
-                    track_is_scaled=True,
+                    track_is_scaled=False,
                     sequence_ids=sequence_ids,
                 )
-            else:
-                for fold in folds:
-                    if fold not in checkpoints[epoch]:
-                        continue
-                    output_fp = fold_prediction_path(args, epoch, fold, prefix)
-                    checkpoint_fp = checkpoints[epoch][fold]
-                    if args.dry_run:
-                        print(f"predict {checkpoint_fp} {sequence_fp} -> {output_fp}")
-                        continue
-                    if args.skip_existing and output_fp.exists():
-                        continue
-                    output_fp.parent.mkdir(parents=True, exist_ok=True)
-                    profile, quantity = predict_checkpoint(nn, checkpoint_fp, sequence_fp)
-                    write_prediction_h5(
-                        output_fp,
-                        profile,
-                        quantity,
-                        args.compression,
-                        track_is_scaled=False,
-                        sequence_ids=sequence_ids,
-                    )
 
 
 def scaled_prediction(pred_fp):
@@ -639,8 +636,8 @@ def scaled_prediction(pred_fp):
     return scaled, quantity
 
 
-def split_epoch_predictions(args, epoch, allele_matrix, prefixes, snps, fold=None):
-    out_fp = split_path(args, epoch) if fold is None else fold_split_path(args, epoch, fold)
+def split_best_predictions(args, allele_matrix, prefixes, snps, fold=None):
+    out_fp = split_path(args) if fold is None else fold_split_path(args, fold)
     if args.skip_existing and out_fp.exists():
         return
 
@@ -649,9 +646,9 @@ def split_epoch_predictions(args, epoch, allele_matrix, prefixes, snps, fold=Non
 
     for prefix in prefixes:
         pred_fp = (
-            prediction_path(args, epoch, prefix)
+            prediction_path(args, prefix)
             if fold is None
-            else fold_prediction_path(args, epoch, fold, prefix)
+            else fold_prediction_path(args, fold, prefix)
         )
         track, quantity = scaled_prediction(pred_fp)
         for row_idx, snp in prediction_row_order(
@@ -689,19 +686,15 @@ def run_split(args):
     prefixes = selected_prefixes(args, allele_matrix)
     snps = list(allele_matrix.columns)
     checkpoints = discover_checkpoints(args)
-    epochs = selected_epochs(args, checkpoints)
     folds = selected_folds(args, checkpoints)
 
-    for epoch in tqdm.tqdm(epochs, desc="Splitting epoch predictions by allele"):
-        if args.mode == "ensemble":
-            split_epoch_predictions(args, epoch, allele_matrix, prefixes, snps)
-        else:
-            epoch_checkpoint_paths(args, checkpoints, epoch, folds)
-            for fold in folds:
-                if fold in checkpoints[epoch]:
-                    split_epoch_predictions(
-                        args, epoch, allele_matrix, prefixes, snps, fold=fold
-                    )
+    if args.mode == "ensemble":
+        split_best_predictions(args, allele_matrix, prefixes, snps)
+    else:
+        checkpoint_paths(args, checkpoints, folds)
+        for fold in tqdm.tqdm(folds, desc="Splitting best-model fold predictions by allele"):
+            if fold in checkpoints:
+                split_best_predictions(args, allele_matrix, prefixes, snps, fold=fold)
 
 
 def l2_score(x, y):
@@ -737,7 +730,7 @@ def correlation(x, y, method):
     return x_series.corr(y_series, method="pearson")
 
 
-def summarize_scores(args, epoch, scores, fold, aggregation):
+def summarize_scores(args, scores, fold, aggregation):
     expt_values = scores["expt"].to_numpy()
     pred_values = scores["pred"].to_numpy()
     expt_log_values = log_l2_values(expt_values)
@@ -747,7 +740,7 @@ def summarize_scores(args, epoch, scores, fold, aggregation):
     return {
         "mode": args.mode,
         "aggregation": aggregation,
-        "epoch": epoch,
+        "checkpoint": "best_model",
         "fold": fold,
         "n_snps": scores.shape[0],
         "n_valid_snps": int(finite.sum()),
@@ -906,19 +899,19 @@ def load_or_calculate_scores(
     return scores
 
 
-def score_epoch(args, epoch, snps, expt_ref, expt_alt, qtl_coord, fold=None):
-    out_fp = score_path(args, epoch) if fold is None else fold_score_path(args, epoch, fold)
-    pred_fp = split_path(args, epoch) if fold is None else fold_split_path(args, epoch, fold)
+def score_best_model(args, snps, expt_ref, expt_alt, qtl_coord, fold=None):
+    out_fp = score_path(args) if fold is None else fold_score_path(args, fold)
+    pred_fp = split_path(args) if fold is None else fold_split_path(args, fold)
     scores = load_or_calculate_scores(
         args, out_fp, pred_fp, snps, expt_ref, expt_alt, qtl_coord, fold=fold
     )
     aggregation = "ensemble" if fold is None else "fold"
-    return summarize_scores(args, epoch, scores, np.nan if fold is None else fold, aggregation)
+    return summarize_scores(args, scores, np.nan if fold is None else fold, aggregation)
 
 
-def load_ensemble_scores(args, epoch, snps, expt_ref, expt_alt, qtl_coord):
-    out_fp = ensemble_score_path(args, epoch)
-    pred_fp = ensemble_split_path(args, epoch)
+def load_ensemble_scores(args, snps, expt_ref, expt_alt, qtl_coord):
+    out_fp = ensemble_score_path(args)
+    pred_fp = ensemble_split_path(args)
     if out_fp.exists():
         scores = pd.read_csv(out_fp, index_col=0)
         return scores.loc[[snp for snp in snps if snp in scores.index]]
@@ -927,18 +920,18 @@ def load_ensemble_scores(args, epoch, snps, expt_ref, expt_alt, qtl_coord):
             args, out_fp, pred_fp, snps, expt_ref, expt_alt, qtl_coord
         )
     print(
-        "Skipping legacy composite aggregation for "
-        f"epoch {epoch}: missing {out_fp} and {pred_fp}."
+        "Skipping legacy composite aggregation: "
+        f"missing {out_fp} and {pred_fp}."
     )
     return None
 
 
-def score_fold_epoch_pooled(args, epoch, folds, snps):
+def score_fold_best_pooled(args, folds, snps):
     fold_scores = []
     for fold in folds:
         if str(fold) == "0":
             continue
-        fold_fp = fold_score_path(args, epoch, fold)
+        fold_fp = fold_score_path(args, fold)
         if fold_fp.exists():
             fold_score = pd.read_csv(fold_fp, index_col=0)
             fold_score = fold_score.loc[
@@ -949,17 +942,17 @@ def score_fold_epoch_pooled(args, epoch, folds, snps):
     if not fold_scores:
         return None
     pooled_scores = pd.concat(fold_scores)
-    return summarize_scores(args, epoch, pooled_scores, "pooled", "pooled_folds")
+    return summarize_scores(args, pooled_scores, "pooled", "pooled_folds")
 
 
-def score_fold_epoch_pooled_with_fold0_ensemble(
-    args, epoch, folds, snps, expt_ref, expt_alt, qtl_coord
+def score_fold_best_pooled_with_fold0_ensemble(
+    args, folds, snps, expt_ref, expt_alt, qtl_coord
 ):
     fold_scores = []
     for fold in folds:
         if str(fold) == "0":
             continue
-        fold_fp = fold_score_path(args, epoch, fold)
+        fold_fp = fold_score_path(args, fold)
         if fold_fp.exists():
             fold_score = pd.read_csv(fold_fp, index_col=0)
             fold_score = fold_score.loc[
@@ -969,7 +962,7 @@ def score_fold_epoch_pooled_with_fold0_ensemble(
             fold_scores.append(fold_score)
 
     ensemble_scores = load_ensemble_scores(
-        args, epoch, snps, expt_ref, expt_alt, qtl_coord
+        args, snps, expt_ref, expt_alt, qtl_coord
     )
     if not fold_scores or ensemble_scores is None:
         return None
@@ -981,7 +974,6 @@ def score_fold_epoch_pooled_with_fold0_ensemble(
     pooled_scores = pd.concat([fold_scores, ensemble_remainder])
     return summarize_scores(
         args,
-        epoch,
         pooled_scores,
         "legacy_composite",
         "legacy_composite",
@@ -993,37 +985,31 @@ def run_score(args):
     snps = list(expt)
     qtl_coord = load_qtl_coordinates(args, snps)
     checkpoints = discover_checkpoints(args)
-    epochs = selected_epochs(args, checkpoints)
     folds = selected_folds(args, checkpoints)
 
     summary_rows = []
-    for epoch in tqdm.tqdm(epochs, desc="Scoring epoch QTL predictions"):
-        if args.mode == "ensemble":
-            summary_rows.append(
-                score_epoch(args, epoch, snps, expt_ref, expt_alt, qtl_coord)
-            )
-        else:
-            epoch_checkpoint_paths(args, checkpoints, epoch, folds)
-            for fold in folds:
-                if fold in checkpoints[epoch]:
-                    summary_rows.append(
-                        score_epoch(
-                            args, epoch, snps, expt_ref, expt_alt, qtl_coord, fold=fold
-                        )
-                    )
-            pooled_row = score_fold_epoch_pooled(args, epoch, folds, snps)
-            if pooled_row is not None:
-                summary_rows.append(pooled_row)
-            pooled_with_fold0_row = score_fold_epoch_pooled_with_fold0_ensemble(
-                args, epoch, folds, snps, expt_ref, expt_alt, qtl_coord
-            )
-            if pooled_with_fold0_row is not None:
-                summary_rows.append(pooled_with_fold0_row)
+    if args.mode == "ensemble":
+        summary_rows.append(score_best_model(args, snps, expt_ref, expt_alt, qtl_coord))
+    else:
+        checkpoint_paths(args, checkpoints, folds)
+        for fold in tqdm.tqdm(folds, desc="Scoring best-model QTL predictions"):
+            if fold in checkpoints:
+                summary_rows.append(
+                    score_best_model(args, snps, expt_ref, expt_alt, qtl_coord, fold=fold)
+                )
+        pooled_row = score_fold_best_pooled(args, folds, snps)
+        if pooled_row is not None:
+            summary_rows.append(pooled_row)
+        pooled_with_fold0_row = score_fold_best_pooled_with_fold0_ensemble(
+            args, folds, snps, expt_ref, expt_alt, qtl_coord
+        )
+        if pooled_with_fold0_row is not None:
+            summary_rows.append(pooled_with_fold0_row)
 
     out_fp = summary_path(args)
     out_fp.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(summary_rows).sort_values("epoch").to_csv(out_fp, index=False)
-    print(f"Saved epoch benchmark summary to {out_fp}")
+    pd.DataFrame(summary_rows).sort_values(["aggregation", "fold"]).to_csv(out_fp, index=False)
+    print(f"Saved best-model benchmark summary to {out_fp}")
 
 
 def main():

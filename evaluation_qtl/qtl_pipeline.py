@@ -18,6 +18,23 @@ import numpy as np
 import pandas as pd
 import tqdm
 
+try:
+    from qtl_filters import (
+        build_filter_report,
+        eligible_snps,
+        load_prefix_map,
+        print_filter_summary,
+        write_filter_report,
+    )
+except ImportError:
+    from evaluation_qtl.qtl_filters import (
+        build_filter_report,
+        eligible_snps,
+        load_prefix_map,
+        print_filter_summary,
+        write_filter_report,
+    )
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
@@ -134,6 +151,11 @@ def parse_args():
         type=Path,
         default=None,
         help="QTL coordinate table with snps and gene columns.",
+    )
+    parser.add_argument(
+        "--pvalue_column",
+        default=None,
+        help="QTL-table p-value column. Auto-detected when omitted.",
     )
     parser.add_argument(
         "--prefixes",
@@ -391,11 +413,39 @@ def load_experimental_tracks(args):
     config = QTL_CONFIG[args.qtl]
     expt_fp = args.expt_by_allele or qtl_data_dir(args) / config["expt"]
     expt = joblib.load(expt_fp)
-    expt = {
-        snp: values
+    if isinstance(expt, (list, tuple)):
+        if len(expt) != 2 or not isinstance(expt[0], dict):
+            raise TypeError(f"Unsupported experimental track format in {expt_fp}.")
+        expt = expt[0]
+    if not isinstance(expt, dict):
+        raise TypeError(f"Expected a SNP-to-allele dictionary in {expt_fp}.")
+    available = {
+        snp
         for snp, values in expt.items()
-        if values[0] is not None and values[1] is not None
+        if values[0] is not None
+        and values[1] is not None
+        and np.asarray(values[0]).size
+        and np.asarray(values[1]).size
     }
+    config = QTL_CONFIG[args.qtl]
+    table_fp = args.qtl_table or qtl_data_dir(args) / config["table"]
+    qtl_table = pd.read_csv(table_fp, sep=config["table_sep"])
+    allele_matrix = pd.read_csv(
+        qtl_data_dir(args) / config["alleles"], index_col=0
+    )
+    report = build_filter_report(
+        args.qtl,
+        allele_matrix,
+        qtl_table,
+        load_prefix_map(args.prefix_map),
+        pvalue_column=args.pvalue_column,
+        available_experimental_snps=available,
+    )
+    report_fp = qtl_prediction_root(args) / mode_dir(args.mode) / "qtl_filter_report.csv.gz"
+    write_filter_report(report, report_fp)
+    print_filter_summary(report, args.qtl)
+    print(f"Saved QTL filter report to {report_fp}")
+    expt = {snp: expt[snp] for snp in eligible_snps(report)}
     snps = list(expt)
     ref = pd.DataFrame({snp: expt[snp][0].mean(axis=0) for snp in snps}).transpose()
     alt = pd.DataFrame({snp: expt[snp][1].mean(axis=0) for snp in snps}).transpose()
@@ -435,18 +485,32 @@ def score_prediction_set(args, run, snps, expt_ref, expt_alt, qtl_coord, fold=No
     import joblib
 
     pred = joblib.load(split_path(args, run, fold=fold))[0]
+    score_snps = [
+        snp
+        for snp in snps
+        if snp in pred
+        and pred[snp][0] is not None
+        and pred[snp][1] is not None
+        and np.asarray(pred[snp][0]).size
+        and np.asarray(pred[snp][1]).size
+    ]
+    if not score_snps:
+        raise ValueError(f"No eligible SNP predictions remain for {run}, fold={fold}.")
     pred_ref = pd.DataFrame(
-        {snp: np.mean(pred[snp][0], axis=0) for snp in snps}
+        {snp: np.mean(pred[snp][0], axis=0) for snp in score_snps}
     ).transpose()
     pred_alt = pd.DataFrame(
-        {snp: np.mean(pred[snp][1], axis=0) for snp in snps}
+        {snp: np.mean(pred[snp][1], axis=0) for snp in score_snps}
     ).transpose()
     scores = pd.DataFrame(
         {
-            "expt": l2_score(expt_ref.to_numpy(), expt_alt.to_numpy()),
+            "expt": l2_score(
+                expt_ref.loc[score_snps].to_numpy(),
+                expt_alt.loc[score_snps].to_numpy(),
+            ),
             "pred": l2_score(pred_ref.to_numpy(), pred_alt.to_numpy()),
         },
-        index=expt_ref.index,
+        index=score_snps,
     )
     if fold is not None:
         keep = holdout_snps(args, fold, qtl_coord)
