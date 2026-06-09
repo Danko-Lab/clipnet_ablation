@@ -227,20 +227,33 @@ def resolve_fold_assignments(args):
     return REPO_ROOT / "clipnet_data_folds/data_fold_assignments.csv"
 
 
+def add_published_reference_comparison(summary, qtl):
+    expected = PUBLISHED_EXPECTED_PEARSON[qtl]
+    summary = summary.copy()
+    summary["published_reference_metric"] = "log_l2_pearson"
+    summary["published_expected_pearson"] = expected
+    summary["published_observed_pearson"] = summary["log_l2_pearson"]
+    summary["published_pearson_delta"] = (
+        summary["published_observed_pearson"] - expected
+    )
+    return summary
+
+
 def annotate_summary(args):
     path = summary_path(args)
     summary = pd.read_csv(path)
-    expected = PUBLISHED_EXPECTED_PEARSON[args.qtl]
-    summary["published_expected_pearson"] = expected
-    summary["published_pearson_delta"] = summary["manuscript_pearson"] - expected
+    summary = add_published_reference_comparison(summary, args.qtl)
     summary.to_csv(path, index=False)
     composite = summary[summary["aggregation"] == "legacy_composite"]
     if not composite.empty:
-        observed = composite.iloc[-1]["manuscript_pearson"]
+        row = composite.iloc[-1]
+        expected = row["published_expected_pearson"]
+        observed = row["published_observed_pearson"]
         print(
-            f"Published composite reference: {expected:.3f}; "
-            f"measured manuscript Pearson: {observed:.3f}; "
-            f"delta: {observed - expected:+.3f}"
+            f"Published log-L2 Pearson reference: {expected:.3f}; "
+            f"measured log-L2 Pearson: {observed:.3f}; "
+            f"delta: {row['published_pearson_delta']:+.3f}; "
+            f"raw-L2 Pearson diagnostic: {row['l2_pearson']:.3f}"
         )
 
 

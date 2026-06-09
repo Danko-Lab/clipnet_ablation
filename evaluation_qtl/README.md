@@ -23,9 +23,9 @@ python evaluation_qtl/benchmark_published_clipnet.py all PATH_TO_MODELS \
 
 Repeat with `--qtl diqtl` for the divergent-initiation benchmark. Composite
 mode creates both the across-model ensemble and the held-out-fold predictions,
-then reports the legacy composite Pearson correlation alongside the published
-reference value (0.477 for tiQTLs or 0.542 for diQTLs). Outputs are isolated
-under:
+then reports the legacy composite log-L2 Pearson correlation alongside the
+published reference value (0.477 for tiQTLs or 0.542 for diQTLs). Raw-L2
+Pearson is retained as a separate diagnostic. Outputs are isolated under:
 
 ```text
 PATH_TO_PREDICTIONS/{qtl}/published_clipnet_benchmark/{run_name}/

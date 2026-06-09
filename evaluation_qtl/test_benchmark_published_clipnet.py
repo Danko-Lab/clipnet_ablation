@@ -3,6 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pandas as pd
+
 import benchmark_published_clipnet as published
 
 
@@ -62,6 +64,31 @@ class PublishedClipnetBenchmarkTest(unittest.TestCase):
                 published.resolve_fold_assignments(args),
                 assignment_path,
             )
+
+    def test_published_delta_uses_log_l2_pearson(self):
+        summary = pd.DataFrame(
+            {
+                "l2_pearson": [0.53],
+                "log_l2_pearson": [0.44],
+            }
+        )
+
+        compared = published.add_published_reference_comparison(
+            summary, "diqtl"
+        )
+
+        self.assertEqual(
+            compared.loc[0, "published_reference_metric"],
+            "log_l2_pearson",
+        )
+        self.assertAlmostEqual(
+            compared.loc[0, "published_observed_pearson"],
+            0.44,
+        )
+        self.assertAlmostEqual(
+            compared.loc[0, "published_pearson_delta"],
+            0.44 - 0.542,
+        )
 
 
 if __name__ == "__main__":
