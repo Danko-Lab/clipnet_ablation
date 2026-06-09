@@ -534,11 +534,10 @@ def average_predictions(nn, checkpoint_paths, sequence_fp, args):
         profile, quantity = prediction
         if quantity.ndim == 2 and quantity.shape[1] == 1:
             quantity = quantity[:, 0]
-        scaled_profile = scale_profile(profile, quantity)
         if profile_sum is None:
-            profile_sum = np.zeros_like(scaled_profile, dtype=np.float64)
+            profile_sum = np.zeros_like(profile, dtype=np.float64)
             quantity_sum = np.zeros_like(quantity, dtype=np.float64)
-        profile_sum += scaled_profile
+        profile_sum += profile
         quantity_sum += quantity
 
     n_models = len(checkpoint_paths)
@@ -597,7 +596,7 @@ def run_predict(args):
                 profile,
                 quantity,
                 args.compression,
-                track_is_scaled=True,
+                track_is_scaled=False,
                 sequence_ids=sequence_ids,
             )
         else:
@@ -751,6 +750,9 @@ def summarize_scores(args, scores, fold, aggregation):
         "l2_spearman_valid": finite_correlation(expt_values, pred_values, "spearman"),
         "log_l2_pearson": strict_correlation(expt_log_values, pred_log_values, "pearson"),
         "log_l2_pearson_valid": finite_correlation(expt_log_values, pred_log_values, "pearson"),
+        "manuscript_pearson": strict_correlation(
+            expt_log_values, pred_log_values, "pearson"
+        ),
         "pred_l2_mean": scores["pred"].mean(),
         "pred_l2_std": scores["pred"].std(),
         "expt_l2_mean": scores["expt"].mean(),

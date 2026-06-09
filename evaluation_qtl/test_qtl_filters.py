@@ -29,7 +29,7 @@ class QTLFilterTests(unittest.TestCase):
                 "boundary": passing,
                 "invalid": [0, 0, 0, 0, 1, 1, 2],
                 "conflict": [0, 1, 0, 0, 1, 1, 1],
-                "insufficient": [0, 0, 0, 0.5, 1, 1, 1],
+                "insufficient": [0, np.nan, 0, 0.5, 1, 1, 1],
                 "missing_expt": passing,
             },
             index=self.prefixes,
@@ -52,6 +52,8 @@ class QTLFilterTests(unittest.TestCase):
         )
         self.assertEqual(report.at["pass", "n_ref_individuals"], 3)
         self.assertEqual(report.at["pass", "n_alt_individuals"], 3)
+        self.assertEqual(report.at["pass", "n_ref_libraries"], 4)
+        self.assertEqual(report.at["pass", "n_alt_libraries"], 3)
         self.assertTrue(report.at["pass", "eligible"])
         self.assertFalse(report.at["boundary", "eligible"])
         self.assertIn("pvalue_threshold", report.at["boundary", "exclusion_reasons"])
@@ -98,6 +100,28 @@ class QTLFilterTests(unittest.TestCase):
             self.prefix_map,
         )
         self.assertTrue(report.at["pass", "eligible"])
+
+    def test_replicate_libraries_count_toward_minimum(self):
+        alleles = pd.DataFrame(
+            {"replicate_pass": [0, 0, 0, 1, 1, 1]},
+            index=["p1a", "p1b", "p2", "p4", "p5", "p6"],
+        )
+        table = pd.DataFrame(
+            {
+                "snps": ["replicate_pass"],
+                "gene": ["chr1:1"],
+                "pvalue": [1e-7],
+            }
+        )
+        report = build_filter_report(
+            "tiqtl",
+            alleles,
+            table,
+            self.prefix_map,
+        )
+        self.assertEqual(report.at["replicate_pass", "n_ref_libraries"], 3)
+        self.assertEqual(report.at["replicate_pass", "n_ref_individuals"], 2)
+        self.assertTrue(report.at["replicate_pass", "eligible"])
 
 
 if __name__ == "__main__":

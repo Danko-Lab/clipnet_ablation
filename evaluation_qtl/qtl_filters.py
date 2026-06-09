@@ -95,6 +95,7 @@ def genotype_summary(values, individuals):
     calls = {}
     invalid = False
     conflict = False
+    library_calls = []
     for prefix, value in values.items():
         dosage = dosage_value(value)
         if dosage is None:
@@ -102,12 +103,16 @@ def genotype_summary(values, individuals):
         if dosage == "invalid":
             invalid = True
             continue
+        library_calls.append(dosage)
         individual = individuals.loc[prefix]
         if individual in calls and calls[individual] != dosage:
             conflict = True
         else:
             calls[individual] = dosage
     return {
+        "n_ref_libraries": sum(value == 0.0 for value in library_calls),
+        "n_alt_libraries": sum(value == 1.0 for value in library_calls),
+        "n_het_libraries": sum(value == 0.5 for value in library_calls),
         "n_ref_individuals": sum(value == 0.0 for value in calls.values()),
         "n_alt_individuals": sum(value == 1.0 for value in calls.values()),
         "n_het_individuals": sum(value == 0.5 for value in calls.values()),
@@ -160,9 +165,9 @@ def build_filter_report(
             reasons.append("unsupported_genotype")
         if summary["replicate_genotype_conflict"]:
             reasons.append("replicate_genotype_conflict")
-        if summary["n_ref_individuals"] < min_homozygous:
+        if summary["n_ref_libraries"] < min_homozygous:
             reasons.append("insufficient_homozygous_ref")
-        if summary["n_alt_individuals"] < min_homozygous:
+        if summary["n_alt_libraries"] < min_homozygous:
             reasons.append("insufficient_homozygous_alt")
         if not in_table:
             reasons.append("missing_qtl_table")
@@ -212,10 +217,10 @@ def print_filter_summary(report, qtl):
     print(f"  after biallelic/replicate-consistency filter: {int(biallelic.sum()):,}")
     genotype_ok = (
         biallelic
-        & (report["n_ref_individuals"] >= 3)
-        & (report["n_alt_individuals"] >= 3)
+        & (report["n_ref_libraries"] >= 3)
+        & (report["n_alt_libraries"] >= 3)
     )
-    print(f"  after >=3 unique homozygotes per allele: {int(genotype_ok.sum()):,}")
+    print(f"  after >=3 homozygous libraries per allele: {int(genotype_ok.sum()):,}")
     annotation_ok = genotype_ok & report["in_qtl_table"] & report["has_qtl_annotation"]
     print(f"  after QTL annotation intersection: {int(annotation_ok.sum()):,}")
     pvalue_ok = annotation_ok & np.isfinite(report["pvalue"]) & (
