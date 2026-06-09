@@ -739,7 +739,7 @@ def summarize_scores(args, scores, fold, aggregation):
     return {
         "mode": args.mode,
         "aggregation": aggregation,
-        "checkpoint": "best_model",
+        "checkpoint": getattr(args, "checkpoint_label", "best_model"),
         "fold": fold,
         "n_snps": scores.shape[0],
         "n_valid_snps": int(finite.sum()),
