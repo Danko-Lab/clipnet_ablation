@@ -28,6 +28,12 @@ try:
         print_filter_summary,
         write_filter_report,
     )
+    from published_qtl_targets import (
+        experimental_l2_targets,
+        experimental_source,
+        score_directory_name,
+        summary_suffix,
+    )
 except ImportError:
     from evaluation_qtl.qtl_filters import (
         build_filter_report,
@@ -35,6 +41,12 @@ except ImportError:
         load_prefix_map,
         print_filter_summary,
         write_filter_report,
+    )
+    from evaluation_qtl.published_qtl_targets import (
+        experimental_l2_targets,
+        experimental_source,
+        score_directory_name,
+        summary_suffix,
     )
 
 
@@ -61,6 +73,7 @@ QTL_CONFIG = {
 BEST_RE = re.compile(r"_(resume_)?best\.h(?:5|df5)$")
 FOLD_DIR_RE = re.compile(r"^(?:f|fold_?)(\d+)$")
 FOLD_FILE_RE = re.compile(r"(?:^|_)fold_?(\d+)(?:_|\.|$)")
+SEQUENCE_COORD_RE = re.compile(r"(chr[^:|,\s_]+):(\d+)-(\d+)")
 PROFILE_PSEUDOCOUNT = 1e-3
 L2_LOG_PSEUDOCOUNT = 1e-3
 
@@ -145,10 +158,28 @@ def parse_args():
         help="Experimental tracks-per-SNP-by-allele joblib file.",
     )
     parser.add_argument(
+        "--experimental_l2_archive",
+        type=Path,
+        default=None,
+        help=(
+            "Use canonical per-SNP observed L2 values from the official "
+            "qtl_analysis.tar.gz instead of generated experimental tracks."
+        ),
+    )
+    parser.add_argument(
         "--qtl_table",
         type=Path,
         default=None,
         help="QTL coordinate table with snps and gene columns.",
+    )
+    parser.add_argument(
+        "--qtl_snp_bed",
+        type=Path,
+        default=None,
+        help=(
+            "BED(.gz) containing QTL SNP coordinates and rsIDs. Defaults to "
+            "{qtl_data_dir}/diQTL_snps.bed.gz or tiQTL_snps.bed.gz."
+        ),
     )
     parser.add_argument(
         "--prefix_map",
@@ -296,7 +327,107 @@ def match_sequence_id(sequence_id, snp_to_idx):
     return None
 
 
-def prediction_row_order(pred_fp, snps, allow_row_order=False):
+def resolve_qtl_snp_bed(args):
+    if getattr(args, "qtl_snp_bed", None) is not None:
+        return args.qtl_snp_bed
+    qdir = qtl_data_dir(args)
+    stem = "diQTL" if args.qtl == "diqtl" else "tiQTL"
+    candidates = [
+        qdir / f"{stem}_snps.bed.gz",
+        qdir / f"{stem}_snps.bed",
+        qdir / f"{args.qtl}_snps.bed.gz",
+        qdir / f"{args.qtl}_snps.bed",
+    ]
+    return next((path for path in candidates if path.exists()), None)
+
+
+def load_snp_coordinate_map(args, snps):
+    snp_bed = resolve_qtl_snp_bed(args)
+    if snp_bed is not None:
+        bed = pd.read_csv(snp_bed, sep="\t", header=None, comment="#")
+        snp_set = set(snps)
+        coordinate_to_snps = {}
+        found = set()
+        for row in bed.itertuples(index=False, name=None):
+            if len(row) < 4:
+                continue
+            snp_matches = []
+            for value in row[3:]:
+                text = str(value)
+                candidates = [text, *re.findall(r"rs\d+", text)]
+                snp_matches.extend(snp for snp in candidates if snp in snp_set)
+            snp_matches = list(dict.fromkeys(snp_matches))
+            if not snp_matches:
+                continue
+            chrom, start, end = str(row[0]), int(row[1]), int(row[2])
+            for position in {start, end, start + 1, end - 1}:
+                key = (chrom, position)
+                values = coordinate_to_snps.setdefault(key, [])
+                for snp in snp_matches:
+                    if snp not in values:
+                        values.append(snp)
+                    found.add(snp)
+        missing = [snp for snp in snps if snp not in found]
+        if missing:
+            raise ValueError(
+                f"{snp_bed} does not provide coordinates for allele-matrix SNPs: "
+                f"{missing[:5]} ({len(missing)} total)."
+            )
+        return coordinate_to_snps
+
+    logging.warning(
+        "No QTL SNP BED found under %s; falling back to QTL-table gene "
+        "coordinates, which may not represent variant positions.",
+        qtl_data_dir(args),
+    )
+    config = QTL_CONFIG[args.qtl]
+    table_fp = args.qtl_table or qtl_data_dir(args) / config["table"]
+    table = pd.read_csv(table_fp, sep=config["table_sep"]).drop_duplicates(
+        subset="snps", keep="first"
+    )
+    table = table[table["snps"].isin(snps)]
+    coordinates = table["gene"].astype(str).str.rsplit(
+        config["gene_sep"], n=1, expand=True
+    )
+    if coordinates.shape[1] != 2:
+        raise ValueError(f"Could not parse QTL coordinates from {table_fp}.")
+
+    snp_to_coordinate = {}
+    for snp, chrom, position in zip(table["snps"], coordinates[0], coordinates[1]):
+        try:
+            key = (chrom, int(position))
+        except (TypeError, ValueError):
+            continue
+        snp_to_coordinate[snp] = key
+
+    coordinate_to_snps = {}
+    for snp in snps:
+        coordinate = snp_to_coordinate.get(snp)
+        if coordinate is not None:
+            coordinate_to_snps.setdefault(coordinate, []).append(snp)
+    return coordinate_to_snps
+
+
+def match_sequence_coordinate(sequence_id, coordinate_to_snps, seen):
+    matches = []
+    for chrom, start, end in SEQUENCE_COORD_RE.findall(sequence_id):
+        start = int(start)
+        end = int(end)
+        for position in {(start + end) // 2, (start + end + 1) // 2}:
+            matches.extend(
+                snp
+                for snp in coordinate_to_snps.get((chrom, position), [])
+                if snp not in seen
+            )
+    matches = list(dict.fromkeys(matches))
+    if matches:
+        return matches[0]
+    return None
+
+
+def prediction_row_order(
+    pred_fp, snps, coordinate_to_snp=None, allow_row_order=False
+):
     import h5py
 
     with h5py.File(pred_fp, "r") as pred:
@@ -310,8 +441,10 @@ def prediction_row_order(pred_fp, snps, allow_row_order=False):
     seen = set()
     for row_idx, sequence_id in enumerate(sequence_ids):
         snp = match_sequence_id(sequence_id, snp_to_idx)
+        if snp is None and coordinate_to_snp is not None:
+            snp = match_sequence_coordinate(sequence_id, coordinate_to_snp, seen)
         if snp is None:
-            unmatched.append(sequence_id)
+            unmatched.append((row_idx, sequence_id))
             continue
         if snp in seen:
             raise ValueError(
@@ -322,19 +455,35 @@ def prediction_row_order(pred_fp, snps, allow_row_order=False):
 
     missing = [snp for snp in snps if snp not in seen]
     if unmatched or missing:
-        if allow_row_order and not rows and len(sequence_ids) == len(snps):
+        if len(unmatched) == len(missing) == 1:
+            row_idx, sequence_id = unmatched[0]
             logging.warning(
-                "Prediction sequence IDs in %s do not match allele-matrix SNP IDs; "
-                "using row-order mapping because --allow_row_order was set.",
+                "Uniquely mapping unmatched sequence %s to remaining SNP %s in %s.",
+                sequence_id,
+                missing[0],
                 pred_fp,
             )
-            return list(enumerate(snps))
+            rows.append((row_idx, missing[0]))
+            return sorted(rows)
+        if allow_row_order and len(unmatched) == len(missing):
+            logging.warning(
+                "Using unsafe row-order mapping for %d unmatched prediction rows "
+                "and SNPs in %s because --allow_row_order was set.",
+                len(unmatched),
+                pred_fp,
+            )
+            rows.extend(
+                (row_idx, snp)
+                for (row_idx, _sequence_id), snp in zip(unmatched, missing)
+            )
+            return sorted(rows)
+        unmatched_ids = [sequence_id for _, sequence_id in unmatched]
         raise ValueError(
             f"Prediction sequence IDs in {pred_fp} do not match the allele matrix. "
-            f"Unmatched sequence IDs: {unmatched[:5]} "
+            f"Unmatched sequence IDs: {unmatched_ids[:5]} "
             f"({len(unmatched)} total). Missing SNPs: {missing[:5]} "
-            f"({len(missing)} total). If these are the original CLIPNET QTL "
-            f"windows in allele-matrix order, rerun with --allow_row_order."
+            f"({len(missing)} total). To map only the unmatched remainder by "
+            f"allele-matrix order, rerun with --allow_row_order."
         )
     return rows
 
@@ -466,7 +615,7 @@ def fold_split_path(args, fold):
 def score_path(args):
     return (
         output_root(args)
-        / "scores"
+        / score_directory_name(args)
         / "best_model_l2_scores.csv.gz"
     )
 
@@ -474,7 +623,7 @@ def score_path(args):
 def ensemble_score_path(args):
     return (
         benchmark_root(args)
-        / "scores"
+        / score_directory_name(args)
         / "best_model_l2_scores.csv.gz"
     )
 
@@ -482,13 +631,16 @@ def ensemble_score_path(args):
 def fold_score_path(args, fold):
     return (
         output_root(args)
-        / "scores"
+        / score_directory_name(args)
         / f"best_model_fold_{fold}_l2_scores.csv.gz"
     )
 
 
 def summary_path(args):
-    return output_root(args) / "best_model_qtl_benchmark_summary.csv"
+    return (
+        output_root(args)
+        / f"best_model_qtl_benchmark_summary{summary_suffix(args)}.csv"
+    )
 
 
 def configure_prediction_runtime(args):
@@ -635,7 +787,9 @@ def scaled_prediction(pred_fp):
     return scaled, quantity
 
 
-def split_best_predictions(args, allele_matrix, prefixes, snps, fold=None):
+def split_best_predictions(
+    args, allele_matrix, prefixes, snps, coordinate_to_snp, fold=None
+):
     out_fp = split_path(args) if fold is None else fold_split_path(args, fold)
     if args.skip_existing and out_fp.exists():
         return
@@ -651,7 +805,10 @@ def split_best_predictions(args, allele_matrix, prefixes, snps, fold=None):
         )
         track, quantity = scaled_prediction(pred_fp)
         for row_idx, snp in prediction_row_order(
-            pred_fp, snps, allow_row_order=args.allow_row_order
+            pred_fp,
+            snps,
+            coordinate_to_snp=coordinate_to_snp,
+            allow_row_order=args.allow_row_order,
         ):
             allele = allele_matrix.at[prefix, snp]
             if allele == 0:
@@ -684,16 +841,26 @@ def run_split(args):
     allele_matrix = load_allele_matrix(args)
     prefixes = selected_prefixes(args, allele_matrix)
     snps = list(allele_matrix.columns)
+    coordinate_to_snp = load_snp_coordinate_map(args, snps)
     checkpoints = discover_checkpoints(args)
     folds = selected_folds(args, checkpoints)
 
     if args.mode == "ensemble":
-        split_best_predictions(args, allele_matrix, prefixes, snps)
+        split_best_predictions(
+            args, allele_matrix, prefixes, snps, coordinate_to_snp
+        )
     else:
         checkpoint_paths(args, checkpoints, folds)
         for fold in tqdm.tqdm(folds, desc="Splitting best-model fold predictions by allele"):
             if fold in checkpoints:
-                split_best_predictions(args, allele_matrix, prefixes, snps, fold=fold)
+                split_best_predictions(
+                    args,
+                    allele_matrix,
+                    prefixes,
+                    snps,
+                    coordinate_to_snp,
+                    fold=fold,
+                )
 
 
 def l2_score(x, y):
@@ -740,6 +907,7 @@ def summarize_scores(args, scores, fold, aggregation):
         "mode": args.mode,
         "aggregation": aggregation,
         "checkpoint": getattr(args, "checkpoint_label", "best_model"),
+        "experimental_source": experimental_source(args),
         "fold": fold,
         "n_snps": scores.shape[0],
         "n_valid_snps": int(finite.sum()),
@@ -848,6 +1016,7 @@ def load_or_calculate_scores(
     qtl_coord,
     fold=None,
 ):
+    targets = experimental_l2_targets(args)
     if args.skip_existing and out_fp.exists():
         scores = pd.read_csv(out_fp, index_col=0)
         return scores.loc[[snp for snp in snps if snp in scores.index]]
@@ -880,9 +1049,13 @@ def load_or_calculate_scores(
     ).transpose()
     scores = pd.DataFrame(
         {
-            "expt": l2_score(
-                expt_ref.loc[score_snps].to_numpy(),
-                expt_alt.loc[score_snps].to_numpy(),
+            "expt": (
+                targets.loc[score_snps].to_numpy()
+                if targets is not None
+                else l2_score(
+                    expt_ref.loc[score_snps].to_numpy(),
+                    expt_alt.loc[score_snps].to_numpy(),
+                )
             ),
             "pred": l2_score(pred_ref.to_numpy(), pred_alt.to_numpy()),
         },
@@ -983,8 +1156,17 @@ def score_fold_best_pooled_with_fold0_ensemble(
 
 
 def run_score(args):
-    expt, expt_ref, expt_alt, _ = load_experimental_tracks(args)
-    snps = list(expt)
+    targets = experimental_l2_targets(args)
+    if targets is None:
+        expt, expt_ref, expt_alt, _ = load_experimental_tracks(args)
+        snps = list(expt)
+    else:
+        expt_ref = expt_alt = None
+        snps = list(targets.index)
+        print(
+            f"Using {len(snps):,} canonical observed L2 targets from "
+            f"{args.experimental_l2_archive}."
+        )
     qtl_coord = load_qtl_coordinates(args, snps)
     checkpoints = discover_checkpoints(args)
     folds = selected_folds(args, checkpoints)

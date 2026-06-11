@@ -30,3 +30,36 @@ Pearson is retained as a separate diagnostic. Outputs are isolated under:
 ```text
 PATH_TO_PREDICTIONS/{qtl}/published_clipnet_benchmark/{run_name}/
 ```
+
+## Published experimental L2 targets
+
+All three benchmark entrypoints can score model predictions against the
+canonical observed per-SNP L2 values in the official `qtl_analysis.tar.gz`:
+
+```bash
+python evaluation_qtl/benchmark_published_clipnet.py score PATH_TO_MODELS \
+  --qtl diqtl \
+  --mode composite \
+  --data_root PATH_TO_DATA \
+  --qtl_data_dir PATH_TO_DATA/diqtl \
+  --predictions_root PATH_TO_PREDICTIONS \
+  --experimental_l2_archive PATH_TO/qtl_analysis.tar.gz
+```
+
+The same option works with `benchmark_best_model.py` and
+`benchmark_epoch_checkpoints.py`. It reuses existing split prediction joblibs,
+joins predicted L2 values to canonical experimental L2 values by SNP ID, and
+does not require prediction or split regeneration.
+
+Archive-backed outputs are kept separate:
+
+```text
+scores_published_l2/
+best_model_qtl_benchmark_summary_published_l2.csv
+epoch_qtl_benchmark_summary_published_l2.csv
+published_clipnet_qtl_benchmark_summary_published_l2.csv
+```
+
+Summary rows record `experimental_source=published_archive`. Without the
+option, benchmarks continue to use generated PRO-cap tracks and write their
+existing output paths.

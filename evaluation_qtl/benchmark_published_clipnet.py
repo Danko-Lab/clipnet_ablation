@@ -17,13 +17,29 @@ import pandas as pd
 
 try:
     import benchmark_best_model as benchmark
+    from published_qtl_targets import score_directory_name, summary_suffix
 except ImportError:
     from evaluation_qtl import benchmark_best_model as benchmark
+    from evaluation_qtl.published_qtl_targets import (
+        score_directory_name,
+        summary_suffix,
+    )
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
-PUBLISHED_EXPECTED_PEARSON = {"tiqtl": 0.477, "diqtl": 0.542}
+PUBLISHED_EXPECTED_PEARSON = {
+    "diqtl": {
+        "ensemble": 0.5796232285979926,
+        "pooled_folds": 0.527294,
+        "legacy_composite": 0.5418812412686593,
+    },
+    "tiqtl": {
+        "ensemble": 0.5096801881197884,
+        "pooled_folds": 0.471688,
+        "legacy_composite": 0.4769306528870891,
+    },
+}
 PUBLISHED_FOLD_RE = re.compile(r"^fold_(\d+)\.h(?:5|df5)$")
 
 
@@ -78,7 +94,22 @@ def parse_args():
     )
     parser.add_argument("--qtl_data_dir", type=Path, default=None)
     parser.add_argument("--expt_by_allele", type=Path, default=None)
+    parser.add_argument(
+        "--experimental_l2_archive",
+        type=Path,
+        default=None,
+        help=(
+            "Use canonical observed L2 values from the official "
+            "qtl_analysis.tar.gz. Only score outputs are regenerated."
+        ),
+    )
     parser.add_argument("--qtl_table", type=Path, default=None)
+    parser.add_argument(
+        "--qtl_snp_bed",
+        type=Path,
+        default=None,
+        help="QTL SNP BED containing variant coordinates and rsIDs.",
+    )
     parser.add_argument(
         "--prefix_map",
         type=Path,
@@ -185,23 +216,34 @@ def fold_split_path(args, fold):
 
 
 def score_path(args):
-    return benchmark.output_root(args) / "scores" / "published_model_l2_scores.csv.gz"
+    return (
+        benchmark.output_root(args)
+        / score_directory_name(args)
+        / "published_model_l2_scores.csv.gz"
+    )
 
 
 def ensemble_score_path(args):
-    return benchmark_root(args) / "scores" / "published_model_l2_scores.csv.gz"
+    return (
+        benchmark_root(args)
+        / score_directory_name(args)
+        / "published_model_l2_scores.csv.gz"
+    )
 
 
 def fold_score_path(args, fold):
     return (
         benchmark.output_root(args)
-        / "scores"
+        / score_directory_name(args)
         / f"published_model_fold_{fold}_l2_scores.csv.gz"
     )
 
 
 def summary_path(args):
-    return benchmark.output_root(args) / "published_clipnet_qtl_benchmark_summary.csv"
+    return (
+        benchmark.output_root(args)
+        / f"published_clipnet_qtl_benchmark_summary{summary_suffix(args)}.csv"
+    )
 
 
 def configure_benchmark_adapter():
@@ -228,13 +270,15 @@ def resolve_fold_assignments(args):
 
 
 def add_published_reference_comparison(summary, qtl):
-    expected = PUBLISHED_EXPECTED_PEARSON[qtl]
     summary = summary.copy()
     summary["published_reference_metric"] = "log_l2_pearson"
-    summary["published_expected_pearson"] = expected
+    summary["published_expected_pearson"] = summary["aggregation"].map(
+        PUBLISHED_EXPECTED_PEARSON[qtl]
+    )
     summary["published_observed_pearson"] = summary["log_l2_pearson"]
     summary["published_pearson_delta"] = (
-        summary["published_observed_pearson"] - expected
+        summary["published_observed_pearson"]
+        - summary["published_expected_pearson"]
     )
     return summary
 
