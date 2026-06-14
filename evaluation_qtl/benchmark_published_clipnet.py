@@ -40,6 +40,11 @@ PUBLISHED_EXPECTED_PEARSON = {
         "legacy_composite": 0.4769306528870891,
     },
 }
+FOLD_CALIBRATED_AGGREGATIONS = {
+    "fold_macro",
+    "fold_standardized_pooled",
+    "pooled_folds",
+}
 PUBLISHED_FOLD_RE = re.compile(r"^fold_(\d+)\.h(?:5|df5)$")
 
 
@@ -283,11 +288,49 @@ def add_published_reference_comparison(summary, qtl):
     return summary
 
 
+def validate_fold_calibrated_summary(summary, mode):
+    if mode != "folds":
+        return
+    aggregations = set(summary["aggregation"])
+    missing = sorted(FOLD_CALIBRATED_AGGREGATIONS - aggregations)
+    if missing:
+        raise ValueError(
+            "Published fold benchmark summary is missing fold-calibrated "
+            f"aggregations: {missing}. Rerun the published benchmark score stage "
+            "with the current evaluation scripts."
+        )
+
+
+def print_fold_calibrated_summary(summary):
+    macro = summary[summary["aggregation"] == "fold_macro"]
+    standardized = summary[
+        summary["aggregation"] == "fold_standardized_pooled"
+    ]
+    pooled = summary[summary["aggregation"] == "pooled_folds"]
+    if macro.empty or standardized.empty or pooled.empty:
+        return
+
+    macro_row = macro.iloc[-1]
+    standardized_row = standardized.iloc[-1]
+    pooled_row = pooled.iloc[-1]
+    print(
+        "Published fold-calibrated metrics: "
+        f"fold macro={macro_row['log_l2_pearson']:.3f}; "
+        "fold-standardized pooled="
+        f"{standardized_row['log_l2_pearson']:.3f}; "
+        f"pooled folds={pooled_row['log_l2_pearson']:.3f}; "
+        f"calibration penalty={standardized_row['calibration_penalty']:.3f}; "
+        f"usable folds={int(macro_row['n_usable_folds'])}."
+    )
+
+
 def annotate_summary(args):
     path = summary_path(args)
     summary = pd.read_csv(path)
+    validate_fold_calibrated_summary(summary, args.mode)
     summary = add_published_reference_comparison(summary, args.qtl)
     summary.to_csv(path, index=False)
+    print_fold_calibrated_summary(summary)
     composite = summary[summary["aggregation"] == "legacy_composite"]
     if not composite.empty:
         row = composite.iloc[-1]

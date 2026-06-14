@@ -34,6 +34,7 @@ try:
         score_directory_name,
         summary_suffix,
     )
+    from fold_calibrated_scoring import build_fold_calibrated_rows
 except ImportError:
     from evaluation_qtl.qtl_filters import (
         build_filter_report,
@@ -48,6 +49,7 @@ except ImportError:
         score_directory_name,
         summary_suffix,
     )
+    from evaluation_qtl.fold_calibrated_scoring import build_fold_calibrated_rows
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -1101,8 +1103,8 @@ def load_ensemble_scores(args, snps, expt_ref, expt_alt, qtl_coord):
     return None
 
 
-def score_fold_best_pooled(args, folds, snps):
-    fold_scores = []
+def load_fold_best_scores(args, folds, snps):
+    fold_scores = {}
     for fold in folds:
         if str(fold) == "0":
             continue
@@ -1113,35 +1115,26 @@ def score_fold_best_pooled(args, folds, snps):
                 [snp for snp in snps if snp in fold_score.index]
             ]
             fold_score["fold"] = fold
-            fold_scores.append(fold_score)
+            fold_scores[fold] = fold_score
+    return fold_scores
+
+
+def score_fold_best_pooled(args, fold_scores):
     if not fold_scores:
         return None
-    pooled_scores = pd.concat(fold_scores)
+    pooled_scores = pd.concat(fold_scores.values())
     return summarize_scores(args, pooled_scores, "pooled", "pooled_folds")
 
 
 def score_fold_best_pooled_with_fold0_ensemble(
-    args, folds, snps, expt_ref, expt_alt, qtl_coord
+    args, fold_scores, snps, expt_ref, expt_alt, qtl_coord
 ):
-    fold_scores = []
-    for fold in folds:
-        if str(fold) == "0":
-            continue
-        fold_fp = fold_score_path(args, fold)
-        if fold_fp.exists():
-            fold_score = pd.read_csv(fold_fp, index_col=0)
-            fold_score = fold_score.loc[
-                [snp for snp in snps if snp in fold_score.index]
-            ]
-            fold_score["fold"] = fold
-            fold_scores.append(fold_score)
-
     ensemble_scores = load_ensemble_scores(
         args, snps, expt_ref, expt_alt, qtl_coord
     )
     if not fold_scores or ensemble_scores is None:
         return None
-    fold_scores = pd.concat(fold_scores)
+    fold_scores = pd.concat(fold_scores.values())
     ensemble_remainder = ensemble_scores.loc[
         ~ensemble_scores.index.isin(fold_scores.index)
     ].copy()
@@ -1181,11 +1174,23 @@ def run_score(args):
                 summary_rows.append(
                     score_best_model(args, snps, expt_ref, expt_alt, qtl_coord, fold=fold)
                 )
-        pooled_row = score_fold_best_pooled(args, folds, snps)
+        fold_scores = load_fold_best_scores(args, folds, snps)
+        pooled_row = score_fold_best_pooled(args, fold_scores)
         if pooled_row is not None:
             summary_rows.append(pooled_row)
+            summary_rows.extend(
+                build_fold_calibrated_rows(
+                    fold_scores,
+                    lambda scores, fold, aggregation: summarize_scores(
+                        args, scores, fold, aggregation
+                    ),
+                    log_l2_values,
+                    correlation,
+                    pooled_row,
+                )
+            )
         pooled_with_fold0_row = score_fold_best_pooled_with_fold0_ensemble(
-            args, folds, snps, expt_ref, expt_alt, qtl_coord
+            args, fold_scores, snps, expt_ref, expt_alt, qtl_coord
         )
         if pooled_with_fold0_row is not None:
             summary_rows.append(pooled_with_fold0_row)

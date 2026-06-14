@@ -4,6 +4,7 @@ import io
 import tarfile
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 import pandas as pd
@@ -118,6 +119,77 @@ class PublishedClipnetBenchmarkTest(unittest.TestCase):
             compared.loc[0, "published_expected_pearson"],
             published.PUBLISHED_EXPECTED_PEARSON["tiqtl"]["ensemble"],
         )
+
+    def test_fold_calibrated_rows_do_not_claim_manuscript_references(self):
+        summary = pd.DataFrame(
+            {
+                "aggregation": [
+                    "fold_macro",
+                    "fold_standardized_pooled",
+                    "pooled_folds",
+                ],
+                "log_l2_pearson": [0.61, 0.59, 0.48],
+            }
+        )
+
+        compared = published.add_published_reference_comparison(
+            summary, "tiqtl"
+        )
+
+        self.assertTrue(
+            pd.isna(
+                compared.loc[
+                    compared["aggregation"] == "fold_macro",
+                    "published_expected_pearson",
+                ]
+            ).all()
+        )
+        self.assertAlmostEqual(
+            compared.loc[
+                compared["aggregation"] == "pooled_folds",
+                "published_expected_pearson",
+            ].iloc[0],
+            published.PUBLISHED_EXPECTED_PEARSON["tiqtl"]["pooled_folds"],
+        )
+
+    def test_requires_fold_calibrated_rows_for_fold_mode(self):
+        summary = pd.DataFrame(
+            {"aggregation": ["fold", "pooled_folds", "legacy_composite"]}
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, "missing fold-calibrated aggregations"
+        ):
+            published.validate_fold_calibrated_summary(summary, "folds")
+
+        published.validate_fold_calibrated_summary(summary, "ensemble")
+
+    def test_prints_fold_calibrated_metrics(self):
+        summary = pd.DataFrame(
+            [
+                {
+                    "aggregation": "fold_macro",
+                    "log_l2_pearson": 0.61,
+                    "n_usable_folds": 9,
+                },
+                {
+                    "aggregation": "fold_standardized_pooled",
+                    "log_l2_pearson": 0.59,
+                    "calibration_penalty": 0.11,
+                },
+                {
+                    "aggregation": "pooled_folds",
+                    "log_l2_pearson": 0.48,
+                },
+            ]
+        )
+        output = io.StringIO()
+
+        with redirect_stdout(output):
+            published.print_fold_calibrated_summary(summary)
+
+        self.assertIn("fold macro=0.610", output.getvalue())
+        self.assertIn("calibration penalty=0.110", output.getvalue())
 
     def test_coordinate_header_maps_to_centered_snp(self):
         sequence_id = (

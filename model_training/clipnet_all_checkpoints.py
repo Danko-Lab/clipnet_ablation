@@ -82,7 +82,7 @@ class CLIPNET:
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def __gpu_settings(self):
-        if self.use_specific_gpu < 0:
+        if self.use_specific_gpu is not None and self.use_specific_gpu < 0:
             self.n_gpus = 0
         if self.n_gpus <= 0:
             print("Requested 0 GPUs. Turning off GPUs.")
@@ -186,6 +186,14 @@ class CLIPNET:
                 steps_per_epoch,
                 steps_per_val_epoch,
             ) = self.__adjust_by_n_gpus()
+            print(
+                "Training configuration: "
+                f"n_gpus={self.n_gpus}, "
+                f"batch_size={batch_size}, "
+                f"learning_rate={opt_hyperparameters['learning_rate']}, "
+                f"epochs={nn.epochs}, "
+                f"early_stopping_patience={nn.early_stopping_patience}"
+            )
             # load data
             train_args = {
                 "seq_folds": self.dataset_params["train_seq"],
@@ -241,6 +249,13 @@ class CLIPNET:
                 save_best_only=False,
                 checkpoint_frequency=nn.checkpoint_frequency,
             )
+            early_stopping = tf.keras.callbacks.EarlyStopping(
+                monitor="val_loss",
+                mode="min",
+                patience=nn.early_stopping_patience,
+                restore_best_weights=False,
+                verbose=1,
+            )
             training_time = TimeHistory()
             tqdm_callback = TqdmCallback(
                 verbose=1, bar_format="{l_bar}{bar:10}{r_bar}{bar:-10b}"
@@ -265,6 +280,7 @@ class CLIPNET:
             callbacks=[
                 best_checkp,
                 periodic_checkp,
+                early_stopping,
                 training_time,
                 tqdm_callback,
                 csv_logger,

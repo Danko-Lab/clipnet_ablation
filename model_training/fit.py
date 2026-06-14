@@ -33,12 +33,35 @@ def main():
         default=None,
         help="resume training from this model.",
     )
+    parser.add_argument(
+        "--n_gpus",
+        type=int,
+        default=2,
+        help=(
+            "Number of GPUs used for distributed training. The published-model "
+            "configuration uses 2 GPUs. Use 0 for CPU training."
+        ),
+    )
     args = parser.parse_args()
 
-    if len(tf.config.list_physical_devices("GPU")) > 0:
-        nn = clipnet.CLIPNET(name=args.name, n_gpus=1, use_specific_gpu=0)
+    if args.n_gpus < 0:
+        parser.error("--n_gpus must be 0 or a positive integer.")
+
+    available_gpus = len(tf.config.list_physical_devices("GPU"))
+    if args.n_gpus > available_gpus:
+        parser.error(
+            f"--n_gpus {args.n_gpus} requested, but TensorFlow sees "
+            f"{available_gpus} GPU(s)."
+        )
+
+    if args.n_gpus > 0:
+        nn = clipnet.CLIPNET(
+            name=args.name,
+            n_gpus=args.n_gpus,
+            use_specific_gpu=0 if args.n_gpus == 1 else None,
+        )
     else:
-        nn = clipnet.CLIPNET(name=args.name, n_gpus=0)
+        nn = clipnet.CLIPNET(name=args.name, n_gpus=0, use_specific_gpu=-1)
     nn.fit(model_dir=args.model_dir, resume_checkpoint=args.resume_checkpoint)
 
 

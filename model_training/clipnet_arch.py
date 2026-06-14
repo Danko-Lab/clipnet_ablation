@@ -14,7 +14,8 @@ except ImportError:
     from clipnet import custom_loss
 
 # model fitting hyperparameters
-epochs = 50
+epochs = 100
+early_stopping_patience = 10
 checkpoint_frequency = 5
 batch_size = 256
 

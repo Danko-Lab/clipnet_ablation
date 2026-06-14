@@ -5,8 +5,8 @@ time python benchmark_epoch_checkpoints.py all ../models/clipnet/ --qtl diqtl --
 time python benchmark_epoch_checkpoints.py all ../models/mean_model/ --qtl diqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/diqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
 time python benchmark_epoch_checkpoints.py all ../models/ref_model/ --qtl diqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/diqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
 
-time python benchmark_epoch_checkpoints.py all ../models/clipnet/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode ensemble
-time python benchmark_epoch_checkpoints.py all ../models/mean_model/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode ensemble
+#time python benchmark_epoch_checkpoints.py all ../models/clipnet/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode ensemble
+#time python benchmark_epoch_checkpoints.py all ../models/mean_model/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode ensemble
 time python benchmark_epoch_checkpoints.py all ../models/ref_model/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode ensemble
 time python benchmark_epoch_checkpoints.py all ../models/clipnet/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
 time python benchmark_epoch_checkpoints.py all ../models/mean_model/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
@@ -25,3 +25,26 @@ time python benchmark_best_model.py all ../models/ref_model/ --qtl tiqtl --predi
 time python benchmark_best_model.py all ../models/clipnet/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --allow_row_order --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
 time python benchmark_best_model.py all ../models/mean_model/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --allow_row_order --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
 time python benchmark_best_model.py all ../models/ref_model/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --allow_row_order --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+
+time python benchmark_best_model.py score ../models/clipnet/ --qtl diqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/diqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+time python benchmark_best_model.py score ../models/mean_model/ --qtl diqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/diqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+time python benchmark_best_model.py score ../models/ref_model/ --qtl diqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/diqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+
+time python benchmark_epoch_checkpoints.py score ../models/clipnet/ --qtl diqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/diqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+time python benchmark_epoch_checkpoints.py score ../models/mean_model/ --qtl diqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/diqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+time python benchmark_epoch_checkpoints.py score ../models/ref_model/ --qtl diqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/diqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+
+time python benchmark_best_model.py score ../models/clipnet/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+time python benchmark_best_model.py score ../models/mean_model/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+time python benchmark_best_model.py score ../models/ref_model/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+
+time python benchmark_epoch_checkpoints.py score ../models/clipnet/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+time python benchmark_epoch_checkpoints.py score ../models/mean_model/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+time python benchmark_epoch_checkpoints.py score ../models/ref_model/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+
+time python benchmark_epoch_checkpoints.py score ../models/clipnet/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+time python benchmark_epoch_checkpoints.py score ../models/mean_model/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+time python benchmark_epoch_checkpoints.py score ../models/ref_model/ --qtl tiqtl --predictions_root ../predictions/ --data_root ../data/ --qtl_data_dir ../data/tiqtl/ --gpu --experimental_l2_archive ../data/qtl_analysis.tar.gz --mode folds
+
+time python evaluation_qtl/benchmark_published_clipnet.py score ../clipnet/clipnet_models/ --mode composite --qtl tiqtl --qtl_data_dir data/tiqtl/ --experimental_l2_archive data/qtl_analysis.tar.gz
+time python evaluation_qtl/benchmark_published_clipnet.py score ../clipnet/clipnet_models/ --mode composite --qtl diqtl --qtl_data_dir data/diqtl/ --experimental_l2_archive data/qtl_analysis.tar.gz
