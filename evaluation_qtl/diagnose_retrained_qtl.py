@@ -14,6 +14,7 @@ It only reads existing files and writes diagnostic tables.
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -92,17 +93,17 @@ def run_specs(value):
 def expected_patterns(run):
     if run == "ref_model":
         return {
-            "seq": "concat_sequence_reference_",
-            "procap": "concat_procap_",
+            "seq": re.compile(r"^concat_sequence_reference_[1-9]\.npz$"),
+            "procap": re.compile(r"^concat_procap_[1-9]\.npz$"),
         }
     if run == "mean_model":
         return {
-            "seq": "concat_sequence_",
-            "procap": "concat_mean_procap_",
+            "seq": re.compile(r"^concat_sequence_[1-9]\.npz$"),
+            "procap": re.compile(r"^concat_mean_procap_[1-9]\.npz$"),
         }
     return {
-        "seq": "concat_sequence_",
-        "procap": "concat_procap_",
+        "seq": re.compile(r"^concat_sequence_[1-9]\.npz$"),
+        "procap": re.compile(r"^concat_procap_[1-9]\.npz$"),
     }
 
 
@@ -113,6 +114,10 @@ def fold_dir(models_root, run, fold):
 def path_list(params, key):
     value = params.get(key, [])
     return value if isinstance(value, list) else [value]
+
+
+def filenames_match(paths, pattern):
+    return all(pattern.fullmatch(Path(path).name) for path in paths)
 
 
 def audit_dataset_params(models_root, specs):
@@ -142,18 +147,14 @@ def audit_dataset_params(models_root, specs):
             for key in ("train_seq", "val_seq", "test_seq"):
                 paths = path_list(params, key)
                 row[f"{key}_count"] = len(paths)
-                row[f"{key}_pattern_ok"] = all(
-                    patterns["seq"] in Path(path).name for path in paths
-                )
+                row[f"{key}_pattern_ok"] = filenames_match(paths, patterns["seq"])
                 row[f"{key}_all_exist"] = all(Path(path).exists() for path in paths)
                 row[f"{key}_example"] = paths[0] if paths else ""
 
             for key in ("train_procap", "val_procap", "test_procap"):
                 paths = path_list(params, key)
                 row[f"{key}_count"] = len(paths)
-                row[f"{key}_pattern_ok"] = all(
-                    patterns["procap"] in Path(path).name for path in paths
-                )
+                row[f"{key}_pattern_ok"] = filenames_match(paths, patterns["procap"])
                 row[f"{key}_all_exist"] = all(Path(path).exists() for path in paths)
                 row[f"{key}_example"] = paths[0] if paths else ""
 
