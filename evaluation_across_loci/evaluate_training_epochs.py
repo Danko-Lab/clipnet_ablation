@@ -161,10 +161,26 @@ def discover_checkpoints(model_root):
 def select_epochs(checkpoints, fold_ids, requested_epochs, allow_missing_folds):
     if requested_epochs is None:
         epochs = sorted(checkpoints)
+        if not allow_missing_folds:
+            complete_epochs = [
+                epoch
+                for epoch in epochs
+                if all(fold in checkpoints[epoch] for fold in fold_ids)
+            ]
+            skipped = sorted(set(epochs) - set(complete_epochs))
+            if skipped:
+                print(
+                    "Skipping epochs missing one or more selected folds: "
+                    f"{skipped}. Use --allow_missing_folds to evaluate them."
+                )
+            epochs = complete_epochs
     else:
         epochs = [int(epoch) for epoch in requested_epochs.split(",") if epoch.strip()]
     if not epochs:
-        raise ValueError("No epochs selected for evaluation.")
+        raise ValueError(
+            "No epochs selected for evaluation. Use --allow_missing_folds "
+            "to evaluate epochs with partial fold coverage."
+        )
 
     selected = []
     for epoch in epochs:

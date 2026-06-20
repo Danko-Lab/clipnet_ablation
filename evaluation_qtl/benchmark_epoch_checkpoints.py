@@ -549,8 +549,29 @@ def discover_checkpoints(args):
     return checkpoints
 
 
-def selected_epochs(args, checkpoints):
-    epochs = sorted(checkpoints) if args.epochs is None else args.epochs
+def selected_epochs(args, checkpoints, folds):
+    if args.epochs is None:
+        epochs = sorted(checkpoints)
+        if not args.allow_missing_folds:
+            complete_epochs = [
+                epoch
+                for epoch in epochs
+                if all(fold in checkpoints[epoch] for fold in folds)
+            ]
+            skipped = sorted(set(epochs) - set(complete_epochs))
+            if skipped:
+                print(
+                    "Skipping epochs missing one or more selected folds: "
+                    f"{skipped}. Use --allow_missing_folds to evaluate them."
+                )
+            epochs = complete_epochs
+            if not epochs:
+                raise FileNotFoundError(
+                    "No epochs have checkpoints for all selected folds. "
+                    "Use --allow_missing_folds to evaluate available folds."
+                )
+    else:
+        epochs = args.epochs
     missing = [epoch for epoch in epochs if epoch not in checkpoints]
     if missing:
         raise FileNotFoundError(f"No checkpoints found for epochs: {missing}")
@@ -722,8 +743,8 @@ def run_predict(args):
     allele_matrix = load_allele_matrix(args)
     prefixes = selected_prefixes(args, allele_matrix)
     checkpoints = discover_checkpoints(args)
-    epochs = selected_epochs(args, checkpoints)
     folds = selected_folds(args, checkpoints)
+    epochs = selected_epochs(args, checkpoints, folds)
     sequence_root = args.data_root / args.qtl / "sequence"
     nn = create_predictor(args)
 
@@ -848,8 +869,8 @@ def run_split(args):
     snps = list(allele_matrix.columns)
     coordinate_to_snp = load_snp_coordinate_map(args, snps)
     checkpoints = discover_checkpoints(args)
-    epochs = selected_epochs(args, checkpoints)
     folds = selected_folds(args, checkpoints)
+    epochs = selected_epochs(args, checkpoints, folds)
 
     for epoch in tqdm.tqdm(epochs, desc="Splitting epoch predictions by allele"):
         if args.mode == "ensemble":
@@ -1174,8 +1195,8 @@ def run_score(args):
         )
     qtl_coord = load_qtl_coordinates(args, snps)
     checkpoints = discover_checkpoints(args)
-    epochs = selected_epochs(args, checkpoints)
     folds = selected_folds(args, checkpoints)
+    epochs = selected_epochs(args, checkpoints, folds)
 
     summary_rows = []
     for epoch in tqdm.tqdm(epochs, desc="Scoring epoch QTL predictions"):

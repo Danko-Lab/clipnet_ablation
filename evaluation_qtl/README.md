@@ -122,6 +122,38 @@ places `fold_macro`, fold-standardized pooled, pooled-fold, and legacy
 correlations in adjacent columns along with fold stability and calibration
 diagnostics. Use `--no_plots` when Matplotlib is unavailable.
 
+## Retrained-model diagnostics
+
+Use `diagnose_retrained_qtl.py` when retrained ablation results look odd. It
+audits model fold directories, `dataset_params.json` path patterns, training
+history best epochs, QTL summary rows, low-performing folds, and calibration
+diagnostics:
+
+```bash
+python evaluation_qtl/diagnose_retrained_qtl.py \
+  --models_root ../models \
+  --predictions_root ../predictions \
+  --qtl tiqtl \
+  --output_dir evaluation_qtl/tiqtl_retrain_diagnostics
+```
+
+If the benchmark was written with a fresh `--run_name`, map the model directory
+name to that prediction namespace:
+
+```bash
+python evaluation_qtl/diagnose_retrained_qtl.py \
+  --models_root ../models \
+  --predictions_root ../predictions \
+  --qtl tiqtl \
+  --runs clipnet:clipnet_2gpu_retrain,mean_model:mean_model_2gpu_retrain,ref_model:ref_model_2gpu_retrain \
+  --output_dir evaluation_qtl/tiqtl_retrain_diagnostics
+```
+
+The companion command file `retrained_diagnostic_commands.sh` lists the full
+remote-server workflow for regenerating fold-mode best-model summaries,
+published CLIPNET controls, diagnostics, and aggregate plots in clean output
+namespaces.
+
 
 time python evaluation_qtl/summarize_qtl_benchmarks.py \
   published=predictions/tiqtl/published_clipnet_benchmark/zenodo_10408623/folds/published_clipnet_qtl_benchmark_summary_published_l2.csv \
