@@ -18,6 +18,7 @@ AGGREGATION_COLUMNS = {
     "fold_macro": "fold_macro_r",
     "fold_standardized_pooled": "fold_standardized_pooled_r",
     "pooled_folds": "pooled_folds_r",
+    "fold0_ensemble": "fold0_ensemble_r",
     "legacy_composite": "legacy_composite_r",
     "ensemble": "ensemble_r",
 }
@@ -214,14 +215,18 @@ def plot_best_models(data, output_dir, prefix, title, plt):
         ("fold_macro_r", "Fold macro"),
         ("fold_standardized_pooled_r", "Fold-standardized"),
         ("pooled_folds_r", "Pooled folds"),
+        ("fold0_ensemble_r", "Fold 0 ensemble"),
         ("legacy_composite_r", "Legacy composite"),
     ]
     x = np.arange(len(best))
-    width = 0.19
-    fig, axis = plt.subplots(figsize=(max(7, len(best) * 1.15), 4.8))
+    width = 0.15
+    center = (len(metrics) - 1) / 2
+    fig, axis = plt.subplots(figsize=(max(8, len(best) * 1.25), 4.8))
     for index, (column, display) in enumerate(metrics):
+        if column not in best:
+            continue
         axis.bar(
-            x + (index - 1.5) * width,
+            x + (index - center) * width,
             best[column],
             width,
             label=display,

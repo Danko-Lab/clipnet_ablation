@@ -4,10 +4,10 @@
 #SBATCH --partition=GPU-shared
 #SBATCH --gres=gpu:v100-32:2
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
+#SBATCH --mem=120G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=ayh8@cornell.edu
-#SBATCH --array=9-26
+#SBATCH --array=0-8
 #SBATCH -A bio240062p
 
 set -eo pipefail

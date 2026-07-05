@@ -1126,6 +1126,27 @@ def score_fold_best_pooled(args, fold_scores):
     return summarize_scores(args, pooled_scores, "pooled", "pooled_folds")
 
 
+def score_fold0_best_ensemble(args, fold_scores, snps, expt_ref, expt_alt, qtl_coord):
+    ensemble_scores = load_ensemble_scores(
+        args, snps, expt_ref, expt_alt, qtl_coord
+    )
+    if not fold_scores or ensemble_scores is None:
+        return None
+    fold_scores = pd.concat(fold_scores.values())
+    ensemble_remainder = ensemble_scores.loc[
+        ~ensemble_scores.index.isin(fold_scores.index)
+    ].copy()
+    if ensemble_remainder.empty:
+        return None
+    ensemble_remainder["fold"] = "fold0_ensemble"
+    return summarize_scores(
+        args,
+        ensemble_remainder,
+        "fold0_ensemble",
+        "fold0_ensemble",
+    )
+
+
 def score_fold_best_pooled_with_fold0_ensemble(
     args, fold_scores, snps, expt_ref, expt_alt, qtl_coord
 ):
@@ -1192,8 +1213,13 @@ def run_score(args):
         pooled_with_fold0_row = score_fold_best_pooled_with_fold0_ensemble(
             args, fold_scores, snps, expt_ref, expt_alt, qtl_coord
         )
+        fold0_ensemble_row = score_fold0_best_ensemble(
+            args, fold_scores, snps, expt_ref, expt_alt, qtl_coord
+        )
         if pooled_with_fold0_row is not None:
             summary_rows.append(pooled_with_fold0_row)
+        if fold0_ensemble_row is not None:
+            summary_rows.append(fold0_ensemble_row)
 
     out_fp = summary_path(args)
     out_fp.parent.mkdir(parents=True, exist_ok=True)

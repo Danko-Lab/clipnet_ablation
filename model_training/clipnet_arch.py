@@ -15,7 +15,7 @@ except ImportError:
 
 # model fitting hyperparameters
 epochs = 100
-early_stopping_patience = 10
+early_stopping_patience = 100
 checkpoint_frequency = 5
 batch_size = 256
 

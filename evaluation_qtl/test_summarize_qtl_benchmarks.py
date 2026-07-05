@@ -49,6 +49,11 @@ def example_summary():
             },
             {
                 "epoch": 5,
+                "aggregation": "fold0_ensemble",
+                "log_l2_pearson": 0.48,
+            },
+            {
+                "epoch": 5,
                 "aggregation": "legacy_composite",
                 "log_l2_pearson": 0.47,
             },
@@ -75,6 +80,7 @@ class SummarizeQtlBenchmarksTest(unittest.TestCase):
         self.assertEqual(record["fold_macro_r"], 0.6)
         self.assertEqual(record["fold_standardized_pooled_r"], 0.58)
         self.assertEqual(record["pooled_folds_r"], 0.46)
+        self.assertEqual(record["fold0_ensemble_r"], 0.48)
         self.assertEqual(record["legacy_composite_r"], 0.47)
         self.assertEqual(record["calibration_penalty"], 0.12)
 
