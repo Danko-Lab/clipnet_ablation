@@ -3,8 +3,8 @@
 This directory contains the current training entrypoint, architecture settings,
 and dataset-parameter generators for the CLIPNET ablation models.
 
-The default configuration is intended to reproduce the likely distributed
-training regime used for the published CLIPNET models:
+The default configuration is currently set up for short diagnostic retraining
+runs with every-epoch retained checkpoints:
 
 | Setting | Value |
 |---|---:|
@@ -13,10 +13,10 @@ training regime used for the published CLIPNET models:
 | Effective batch size | 512 |
 | Per-GPU base learning rate | 0.001 |
 | Effective learning rate | 0.002 |
-| Maximum epochs | 100 |
-| Early-stopping patience | 10 epochs |
+| Maximum epochs | 20 |
+| Early-stopping patience | 100 epochs |
 | Best-checkpoint evaluation | Every epoch |
-| Retained checkpoint frequency | Every 5 epochs |
+| Retained checkpoint frequency | Every epoch |
 
 `clipnet_all_checkpoints.py` scales batch size and learning rate linearly with
 the requested GPU count. The effective configuration is printed when training
@@ -82,34 +82,34 @@ python model_training/fit.py MODEL_ROOT/f1 --name fold_1 --n_gpus 0
 ```
 
 Changing GPU count changes batch size, learning rate, optimizer-update count,
-gradient noise, and potentially model calibration. Use `--n_gpus 2` for
-published-model protocol comparisons.
+gradient noise, and potentially model calibration. Use `--n_gpus 2` when
+comparing against the recent ablation runs.
 
 ## Checkpoints and stopping
 
-Training runs for at most 100 epochs and monitors `val_loss`.
+Training runs for at most 20 epochs and monitors `val_loss`.
 
 Two independent checkpoint callbacks are used:
 
 1. The stable best-model checkpoint is checked after every epoch and overwritten
    only when validation loss improves.
-2. Periodic checkpoints are retained every five epochs, regardless of
+2. Periodic checkpoints are retained every epoch, regardless of
    validation loss.
 
 Fresh training produces:
 
 ```text
 fold_1_best.hdf5
-fold_1_epoch_005.hdf5
-fold_1_epoch_010.hdf5
+fold_1_epoch_001.hdf5
+fold_1_epoch_002.hdf5
 ...
-fold_1_epoch_100.hdf5
+fold_1_epoch_020.hdf5
 ```
 
-Early stopping terminates training after 10 consecutive epochs without a
-validation-loss improvement. Consequently, later periodic files may not exist.
+The early-stopping patience is intentionally longer than the epoch limit, so
+fresh runs are expected to complete all 20 epochs unless interrupted manually.
 The stable `*_best.hdf5` file remains the lowest-validation-loss checkpoint
-encountered before stopping.
+encountered during those 20 epochs.
 
 Other outputs include:
 
@@ -121,6 +121,15 @@ fold_1_architecture.json
 
 The CSV log and history JSON contain the epoch losses needed to identify the
 selected validation minimum and compare convergence among folds.
+
+Historical 100-epoch runs used checkpoint names such as:
+
+```text
+fold_1_epoch_005.hdf5
+fold_1_epoch_010.hdf5
+...
+fold_1_epoch_100.hdf5
+```
 
 ## Resume training
 

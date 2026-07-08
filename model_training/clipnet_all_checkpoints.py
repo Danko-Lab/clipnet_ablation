@@ -192,7 +192,8 @@ class CLIPNET:
                 f"batch_size={batch_size}, "
                 f"learning_rate={opt_hyperparameters['learning_rate']}, "
                 f"epochs={nn.epochs}, "
-                f"early_stopping_patience={nn.early_stopping_patience}"
+                f"early_stopping_patience={nn.early_stopping_patience}, "
+                f"checkpoint_frequency={nn.checkpoint_frequency}"
             )
             # load data
             train_args = {
