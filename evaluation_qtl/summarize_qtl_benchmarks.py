@@ -21,6 +21,11 @@ AGGREGATION_COLUMNS = {
     "fold0_ensemble": "fold0_ensemble_r",
     "legacy_composite": "legacy_composite_r",
     "ensemble": "ensemble_r",
+    "best_per_fold_fold_macro": "best_per_fold_fold_macro_r",
+    "best_per_fold_fold_standardized_pooled": "best_per_fold_fold_standardized_pooled_r",
+    "best_per_fold_pooled": "best_per_fold_pooled_r",
+    "best_per_fold_fold0_ensemble": "best_per_fold_fold0_ensemble_r",
+    "best_per_fold_legacy_composite": "best_per_fold_legacy_composite_r",
 }
 DIAGNOSTIC_COLUMNS = (
     "fold_log_l2_pearson_median",
@@ -242,6 +247,7 @@ def plot_best_models(data, output_dir, prefix, title, plt):
         ("pooled_folds_r", "Pooled folds"),
         ("fold0_ensemble_r", "Fold 0 ensemble"),
         ("legacy_composite_r", "Legacy composite"),
+        ("best_per_fold_legacy_composite_r", "Best-per-fold composite"),
     ]
     x = np.arange(len(best))
     width = 0.15

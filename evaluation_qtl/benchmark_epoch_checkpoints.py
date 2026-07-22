@@ -1151,6 +1151,46 @@ def load_fold_epoch_scores(args, epoch, folds, snps):
     return fold_scores
 
 
+def best_fold_epoch_scores(args, epochs, folds, snps):
+    best_scores = {}
+    best_rows = []
+    for fold in folds:
+        if str(fold) == "0":
+            continue
+        candidates = []
+        for epoch in epochs:
+            fold_fp = fold_score_path(args, epoch, fold)
+            if not fold_fp.exists():
+                continue
+            fold_score = pd.read_csv(fold_fp, index_col=0)
+            fold_score = fold_score.loc[
+                [snp for snp in snps if snp in fold_score.index]
+            ].copy()
+            if fold_score.empty:
+                continue
+            row = summarize_scores(args, epoch, fold_score, fold, "fold")
+            candidates.append((row["log_l2_pearson"], epoch, fold_score, row))
+        finite_candidates = [
+            candidate
+            for candidate in candidates
+            if np.isfinite(candidate[0])
+        ]
+        if not finite_candidates:
+            continue
+        _, selected_epoch, selected_score, selected_row = max(
+            finite_candidates, key=lambda candidate: candidate[0]
+        )
+        selected_score["fold"] = fold
+        selected_score["selected_epoch"] = selected_epoch
+        best_scores[fold] = selected_score
+        selected_row = dict(selected_row)
+        selected_row["epoch"] = np.nan
+        selected_row["selected_epoch"] = selected_epoch
+        selected_row["aggregation"] = "best_per_fold"
+        best_rows.append(selected_row)
+    return best_scores, best_rows
+
+
 def score_fold_epoch_pooled(args, epoch, fold_scores):
     if not fold_scores:
         return None
@@ -1180,6 +1220,90 @@ def score_fold0_epoch_ensemble(
         "fold0_ensemble",
         "fold0_ensemble",
     )
+
+
+def score_best_per_fold_pooled(args, fold_scores):
+    if not fold_scores:
+        return None
+    pooled_scores = pd.concat(fold_scores.values())
+    row = summarize_scores(
+        args, np.nan, pooled_scores, "best_per_fold_pooled", "best_per_fold_pooled"
+    )
+    row["selected_epoch"] = selected_epoch_summary(fold_scores)
+    return row
+
+
+def selected_epoch_summary(fold_scores):
+    selected = {
+        str(fold): int(scores["selected_epoch"].iloc[0])
+        for fold, scores in fold_scores.items()
+        if "selected_epoch" in scores
+    }
+    return ",".join(f"{fold}:{epoch}" for fold, epoch in sorted(selected.items()))
+
+
+def score_best_per_fold_fold0_ensemble(
+    args, epochs, fold_scores, snps, expt_ref, expt_alt, qtl_coord
+):
+    if not fold_scores:
+        return None
+    heldout_scores = pd.concat(fold_scores.values())
+    candidates = []
+    for epoch in epochs:
+        ensemble_scores = load_ensemble_scores(
+            args, epoch, snps, expt_ref, expt_alt, qtl_coord
+        )
+        if ensemble_scores is None:
+            continue
+        ensemble_remainder = ensemble_scores.loc[
+            ~ensemble_scores.index.isin(heldout_scores.index)
+        ].copy()
+        if ensemble_remainder.empty:
+            continue
+        row = summarize_scores(
+            args,
+            epoch,
+            ensemble_remainder,
+            "fold0_ensemble",
+            "fold0_ensemble",
+        )
+        candidates.append((row["log_l2_pearson"], epoch, ensemble_remainder, row))
+    finite_candidates = [
+        candidate for candidate in candidates if np.isfinite(candidate[0])
+    ]
+    if not finite_candidates:
+        return None
+    _, selected_epoch, selected_scores, row = max(
+        finite_candidates, key=lambda candidate: candidate[0]
+    )
+    selected_scores["fold"] = "fold0_ensemble"
+    selected_scores["selected_epoch"] = selected_epoch
+    row = dict(row)
+    row["epoch"] = np.nan
+    row["selected_epoch"] = selected_epoch
+    row["aggregation"] = "best_per_fold_fold0_ensemble"
+    return row, selected_scores
+
+
+def score_best_per_fold_legacy_composite(
+    args, fold_scores, fold0_scores
+):
+    if not fold_scores or fold0_scores is None:
+        return None
+    pooled_scores = pd.concat([pd.concat(fold_scores.values()), fold0_scores])
+    row = summarize_scores(
+        args,
+        np.nan,
+        pooled_scores,
+        "best_per_fold_legacy_composite",
+        "best_per_fold_legacy_composite",
+    )
+    selected = selected_epoch_summary(fold_scores)
+    if "selected_epoch" in fold0_scores and not fold0_scores.empty:
+        fold0_epoch = int(fold0_scores["selected_epoch"].iloc[0])
+        selected = f"{selected},fold0:{fold0_epoch}" if selected else f"fold0:{fold0_epoch}"
+    row["selected_epoch"] = selected
+    return row
 
 
 def score_fold_epoch_pooled_with_fold0_ensemble(
@@ -1262,6 +1386,35 @@ def run_score(args):
                 summary_rows.append(pooled_with_fold0_row)
             if fold0_ensemble_row is not None:
                 summary_rows.append(fold0_ensemble_row)
+
+    if args.mode == "folds":
+        best_scores, best_rows = best_fold_epoch_scores(args, epochs, folds, snps)
+        summary_rows.extend(best_rows)
+        best_pooled_row = score_best_per_fold_pooled(args, best_scores)
+        if best_pooled_row is not None:
+            summary_rows.append(best_pooled_row)
+            summary_rows.extend(
+                build_fold_calibrated_rows(
+                    best_scores,
+                    lambda scores, fold, aggregation: summarize_scores(
+                        args, np.nan, scores, fold, f"best_per_fold_{aggregation}"
+                    ),
+                    log_l2_values,
+                    correlation,
+                    best_pooled_row,
+                )
+            )
+        fold0_result = score_best_per_fold_fold0_ensemble(
+            args, epochs, best_scores, snps, expt_ref, expt_alt, qtl_coord
+        )
+        if fold0_result is not None:
+            fold0_row, fold0_scores = fold0_result
+            summary_rows.append(fold0_row)
+            best_legacy_row = score_best_per_fold_legacy_composite(
+                args, best_scores, fold0_scores
+            )
+            if best_legacy_row is not None:
+                summary_rows.append(best_legacy_row)
 
     out_fp = summary_path(args)
     out_fp.parent.mkdir(parents=True, exist_ok=True)
