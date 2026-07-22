@@ -249,28 +249,20 @@ def plot_epochs(data, output_dir, prefix, title, plt):
     if epochs.empty:
         return []
 
-    fig, axes = plt.subplots(2, 1, figsize=(8.5, 8), sharex=True)
+    fig, axis = plt.subplots(figsize=(8.5, 4.8))
     for label, group in epochs.groupby("label", sort=False):
         group = group.sort_values("epoch")
-        axes[0].plot(
+        axis.plot(
             group["epoch"],
-            group["fold_macro_r"],
+            group["legacy_composite_r"],
             marker="o",
             label=label,
         )
-        axes[1].plot(
-            group["epoch"],
-            group["calibration_penalty"],
-            marker="o",
-            label=label,
-        )
-    axes[0].set_ylabel("Fold macro log-L2 Pearson")
-    axes[0].set_title(f"{title}: training epochs")
-    axes[1].set_ylabel("Calibration penalty")
-    axes[1].set_xlabel("Epoch")
-    for axis in axes:
-        axis.grid(alpha=0.2)
-        axis.legend(frameon=False)
+    axis.set_ylabel("Legacy composite log-L2 Pearson")
+    axis.set_title(f"{title}: training epochs")
+    axis.set_xlabel("Epoch")
+    axis.grid(alpha=0.2)
+    axis.legend(frameon=False)
     fig.tight_layout()
     stem = f"{prefix}_epochs"
     save_figure(fig, output_dir, stem)
