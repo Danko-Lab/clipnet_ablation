@@ -305,14 +305,34 @@ def plot_epochs(data, output_dir, prefix, title, plt):
         for label, group in epochs.groupby("label", sort=False):
             group = group.sort_values("epoch")
             if use_errorbar:
-                axis.errorbar(
-                    group["epoch"],
-                    group[column],
-                    yerr=group["fold_sem_r"],
+                finite = group[
+                    group[["epoch", column]].notna().all(axis=1)
+                ].copy()
+                if finite.empty:
+                    continue
+                line = axis.plot(
+                    finite["epoch"],
+                    finite[column],
                     marker="o",
-                    capsize=3,
                     label=label,
-                )
+                )[0]
+                sem = pd.to_numeric(finite["fold_sem_r"], errors="coerce")
+                sem_finite = np.isfinite(sem)
+                if sem_finite.sum() >= 2:
+                    x = finite.loc[sem_finite, "epoch"].to_numpy(dtype=float)
+                    y = finite.loc[sem_finite, column].to_numpy(dtype=float)
+                    yerr = sem.loc[sem_finite].to_numpy(dtype=float)
+                    dense_x = np.linspace(x.min(), x.max(), max(200, len(x) * 20))
+                    dense_y = np.interp(dense_x, x, y)
+                    dense_yerr = np.interp(dense_x, x, yerr)
+                    axis.fill_between(
+                        dense_x,
+                        dense_y - dense_yerr,
+                        dense_y + dense_yerr,
+                        color=line.get_color(),
+                        alpha=0.18,
+                        linewidth=0,
+                    )
             else:
                 axis.plot(
                     group["epoch"],
