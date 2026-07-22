@@ -33,6 +33,11 @@ DIAGNOSTIC_COLUMNS = (
     "pred_log_l2_fold_mean_sd",
     "pred_log_l2_fold_std_sd",
 )
+FOLD_SUMMARY_COLUMNS = (
+    "fold_mean_r",
+    "fold_sd_r",
+    "fold_sem_r",
+)
 
 
 def parse_args():
@@ -111,6 +116,25 @@ def first_aggregation(group, aggregation):
     return rows.iloc[-1]
 
 
+def fold_summary(group):
+    folds = group[group["aggregation"] == "fold"].copy()
+    if folds.empty:
+        return {column: np.nan for column in FOLD_SUMMARY_COLUMNS}
+
+    values = pd.to_numeric(folds["log_l2_pearson"], errors="coerce")
+    values = values[np.isfinite(values)]
+    if values.empty:
+        return {column: np.nan for column in FOLD_SUMMARY_COLUMNS}
+
+    sd = values.std(ddof=1) if len(values) > 1 else np.nan
+    sem = sd / np.sqrt(len(values)) if len(values) > 1 else np.nan
+    return {
+        "fold_mean_r": values.mean(),
+        "fold_sd_r": sd,
+        "fold_sem_r": sem,
+    }
+
+
 def aggregate_summary(summary, label, path):
     required = {"aggregation", "log_l2_pearson"}
     missing = required - set(summary.columns)
@@ -141,6 +165,7 @@ def aggregate_summary(summary, label, path):
             record[output_column] = (
                 row["log_l2_pearson"] if row is not None else np.nan
             )
+        record.update(fold_summary(group))
 
         macro = first_aggregation(group, "fold_macro")
         standardized = first_aggregation(group, "fold_standardized_pooled")
@@ -249,20 +274,38 @@ def plot_epochs(data, output_dir, prefix, title, plt):
     if epochs.empty:
         return []
 
-    fig, axis = plt.subplots(figsize=(8.5, 4.8))
+    fig, axes = plt.subplots(2, 1, figsize=(8.5, 8), sharex=True)
     for label, group in epochs.groupby("label", sort=False):
         group = group.sort_values("epoch")
-        axis.plot(
+        axes[0].plot(
             group["epoch"],
             group["legacy_composite_r"],
             marker="o",
             label=label,
         )
-    axis.set_ylabel("Legacy composite log-L2 Pearson")
-    axis.set_title(f"{title}: training epochs")
-    axis.set_xlabel("Epoch")
-    axis.grid(alpha=0.2)
-    axis.legend(frameon=False)
+        axes[1].plot(
+            group["epoch"],
+            group["fold_macro_r"],
+            marker="o",
+            linestyle="-",
+            label=f"{label} fold macro",
+        )
+        axes[1].errorbar(
+            group["epoch"],
+            group["fold_mean_r"],
+            yerr=group["fold_sem_r"],
+            marker="s",
+            linestyle="--",
+            capsize=3,
+            label=f"{label} fold mean +/- SEM",
+        )
+    axes[0].set_ylabel("Legacy composite log-L2 Pearson")
+    axes[0].set_title(f"{title}: training epochs")
+    axes[1].set_ylabel("Fold log-L2 Pearson")
+    axes[1].set_xlabel("Epoch")
+    for axis in axes:
+        axis.grid(alpha=0.2)
+        axis.legend(frameon=False)
     fig.tight_layout()
     stem = f"{prefix}_epochs"
     save_figure(fig, output_dir, stem)

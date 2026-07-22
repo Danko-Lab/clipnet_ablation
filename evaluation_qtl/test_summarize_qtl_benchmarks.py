@@ -38,6 +38,24 @@ def example_summary():
             },
             {
                 "epoch": 5,
+                "aggregation": "fold",
+                "fold": 1,
+                "log_l2_pearson": 0.3,
+            },
+            {
+                "epoch": 5,
+                "aggregation": "fold",
+                "fold": 2,
+                "log_l2_pearson": 0.5,
+            },
+            {
+                "epoch": 5,
+                "aggregation": "fold",
+                "fold": 3,
+                "log_l2_pearson": 0.7,
+            },
+            {
+                "epoch": 5,
                 "aggregation": "fold_standardized_pooled",
                 "log_l2_pearson": 0.58,
                 "calibration_penalty": 0.12,
@@ -82,6 +100,9 @@ class SummarizeQtlBenchmarksTest(unittest.TestCase):
         self.assertEqual(record["pooled_folds_r"], 0.46)
         self.assertEqual(record["fold0_ensemble_r"], 0.48)
         self.assertEqual(record["legacy_composite_r"], 0.47)
+        self.assertAlmostEqual(record["fold_mean_r"], 0.5)
+        self.assertAlmostEqual(record["fold_sd_r"], 0.2)
+        self.assertAlmostEqual(record["fold_sem_r"], 0.2 / np.sqrt(3))
         self.assertEqual(record["calibration_penalty"], 0.12)
 
     def test_calculates_missing_calibration_penalty(self):
