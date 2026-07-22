@@ -274,43 +274,63 @@ def plot_epochs(data, output_dir, prefix, title, plt):
     if epochs.empty:
         return []
 
-    fig, axes = plt.subplots(2, 1, figsize=(8.5, 8), sharex=True)
-    for label, group in epochs.groupby("label", sort=False):
-        group = group.sort_values("epoch")
-        axes[0].plot(
-            group["epoch"],
-            group["legacy_composite_r"],
-            marker="o",
-            label=label,
-        )
-        axes[1].plot(
-            group["epoch"],
-            group["fold_macro_r"],
-            marker="o",
-            linestyle="-",
-            label=f"{label} fold macro",
-        )
-        axes[1].errorbar(
-            group["epoch"],
-            group["fold_mean_r"],
-            yerr=group["fold_sem_r"],
-            marker="s",
-            linestyle="--",
-            capsize=3,
-            label=f"{label} fold mean +/- SEM",
-        )
-    axes[0].set_ylabel("Legacy composite log-L2 Pearson")
-    axes[0].set_title(f"{title}: training epochs")
-    axes[1].set_ylabel("Fold log-L2 Pearson")
-    axes[1].set_xlabel("Epoch")
-    for axis in axes:
+    plots = [
+        (
+            "legacy_composite",
+            "legacy_composite_r",
+            "Legacy composite log-L2 Pearson",
+            "Legacy composite",
+            False,
+        ),
+        (
+            "fold_macro",
+            "fold_macro_r",
+            "Fold macro log-L2 Pearson",
+            "Fold macro",
+            False,
+        ),
+        (
+            "fold_mean",
+            "fold_mean_r",
+            "Mean fold log-L2 Pearson",
+            "Fold mean +/- SEM",
+            True,
+        ),
+    ]
+    stems = []
+    for stem_suffix, column, ylabel, display, use_errorbar in plots:
+        if column not in epochs or epochs[column].isna().all():
+            continue
+        fig, axis = plt.subplots(figsize=(8.5, 4.8))
+        for label, group in epochs.groupby("label", sort=False):
+            group = group.sort_values("epoch")
+            if use_errorbar:
+                axis.errorbar(
+                    group["epoch"],
+                    group[column],
+                    yerr=group["fold_sem_r"],
+                    marker="o",
+                    capsize=3,
+                    label=label,
+                )
+            else:
+                axis.plot(
+                    group["epoch"],
+                    group[column],
+                    marker="o",
+                    label=label,
+                )
+        axis.set_ylabel(ylabel)
+        axis.set_title(f"{title}: {display} by training epoch")
+        axis.set_xlabel("Epoch")
         axis.grid(alpha=0.2)
         axis.legend(frameon=False)
-    fig.tight_layout()
-    stem = f"{prefix}_epochs"
-    save_figure(fig, output_dir, stem)
-    plt.close(fig)
-    return [stem]
+        fig.tight_layout()
+        stem = f"{prefix}_epochs_{stem_suffix}"
+        save_figure(fig, output_dir, stem)
+        plt.close(fig)
+        stems.append(stem)
+    return stems
 
 
 def plot_calibration(data, output_dir, prefix, title, plt):
