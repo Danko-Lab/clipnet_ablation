@@ -29,6 +29,11 @@ the same held-out SNPs as the published-L2 table:
   that predict the published L2 from the mean predicted count, or from the
   absolute count difference between homozygotes, with no profile information.
 
+With --universe, fold 0 holds the pipeline's fold-0 ensemble: the scored SNPs
+that no fold 1-9 model holds out, predicted by averaging the 9 fold models' raw
+profiles and counts before scaling. It is computed from the fold-mode
+predictions, so no ensemble-mode inference is needed.
+
 A window ensemble averages the per-checkpoint allele-mean tracks over the
 checkpoints in an epoch range (named ``window_e{first}-e{last}``).
 
@@ -64,6 +69,11 @@ def parse_args():
                         help="Comma-separated epoch ranges such as 1-5,6-10,11-20.")
     parser.add_argument("--checkpoints", default=None,
                         help="Comma-separated checkpoint names to process (default: all).")
+    parser.add_argument("--universe", type=Path, default=None,
+                        help="Ensemble-mode score table listing every scored SNP (expt, "
+                             "chrom, start). With it, fold 0 is scored as the pipeline's "
+                             "fold-0 ensemble: SNPs held out by no fold 1-9 model, "
+                             "predicted by the 9-model average.")
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--skip_existing", action="store_true")
     args = parser.parse_args()
@@ -98,30 +108,68 @@ def prefix_rows(args, pred_fp, prefix, all_snps, coordinate_to_snp):
     return _ROW_CACHE[prefix]
 
 
-def summarize_one(task, args, allele_matrix, coordinate_to_snp):
+def fold0_table(args, tasks, checkpoint):
+    """Fold-0 ensemble SNPs: scored SNPs that no fold 1-9 model holds out."""
+    folds = [f for c, f in tasks if c == checkpoint]
+    if args.universe is None or sorted(folds) != list(range(1, 10)):
+        return None
+    universe = pd.read_csv(args.universe, index_col=0)
+    held_out = set().union(*(pd.read_csv(tasks[(checkpoint, f)], index_col=0).index
+                             for f in folds))
+    return universe.loc[~universe.index.isin(held_out), ["expt", "chrom", "start"]]
+
+
+def build_tasks(args, score_files):
+    """(checkpoint, fold) -> (SNPs, target table, prediction dirs averaged)."""
+    tasks = {}
+    for (checkpoint, fold), score_fp in score_files.items():
+        table = pd.read_csv(score_fp, index_col=0)
+        tasks[(checkpoint, fold)] = (
+            table, [args.bench_dir / "predictions" / checkpoint / f"fold_{fold}"])
+    for checkpoint in sorted({c for c, _ in score_files}):
+        table = fold0_table(args, score_files, checkpoint)
+        if table is not None and not table.empty:
+            tasks[(checkpoint, 0)] = (
+                table, [args.bench_dir / "predictions" / checkpoint / f"fold_{f}"
+                        for f in range(1, 10)])
+    return tasks
+
+
+def summarize_one(item, args, allele_matrix, coordinate_to_snp):
+    """Per-SNP homozygous-allele means for one checkpoint and fold.
+
+    With several prediction dirs (fold 0), the raw profiles and counts are
+    averaged over the fold models before scaling, as in the benchmark's
+    ensemble mode.
+    """
     import h5py
 
-    (checkpoint, fold), score_fp = task
+    (checkpoint, fold), (table, pred_dirs) = item
     out_fp = cache_path(args.bench_dir, checkpoint, fold)
     if args.skip_existing and out_fp.exists():
         return
-    snps = list(pd.read_csv(score_fp, index_col=0).index)
+    snps = list(table.index)
     snp_idx = {snp: i for i, snp in enumerate(snps)}
     all_snps = list(allele_matrix.columns)
-    pred_dir = args.bench_dir / "predictions" / checkpoint / f"fold_{fold}"
-    missing = [p for p in allele_matrix.index if not (pred_dir / f"{p}.h5").exists()]
+    missing = sum(not (d / f"{p}.h5").exists() for d in pred_dirs for p in allele_matrix.index)
     if missing:
-        return f"{checkpoint} fold {fold}: {len(missing)} prediction files missing; skipped"
+        return f"{checkpoint} fold {fold}: {missing} prediction files missing; skipped"
 
     scaled = shape = quantity = None
     count = np.zeros((2, len(snps)))
     for prefix in allele_matrix.index:
-        pred_fp = pred_dir / f"{prefix}.h5"
-        with h5py.File(pred_fp, "r") as pred:
-            track = pred["track"][:].astype(np.float64)
-            q = pred["quantity"][:].astype(np.float64).reshape(len(track))
-            if pred.attrs.get("track_is_scaled", False):
-                raise ValueError(f"{pred_fp} stores scaled tracks; raw profiles are needed.")
+        track = q = None
+        for pred_dir in pred_dirs:
+            pred_fp = pred_dir / f"{prefix}.h5"
+            with h5py.File(pred_fp, "r") as pred:
+                if pred.attrs.get("track_is_scaled", False):
+                    raise ValueError(f"{pred_fp} stores scaled tracks; raw profiles are needed.")
+                t = pred["track"][:].astype(np.float64)
+                qq = pred["quantity"][:].astype(np.float64).reshape(len(t))
+            track = t if track is None else track + t
+            q = qq if q is None else q + qq
+        track /= len(pred_dirs)
+        q /= len(pred_dirs)
         if scaled is None:
             scaled = np.zeros((2, len(snps), track.shape[1]))
             shape = np.zeros_like(scaled)
@@ -152,8 +200,10 @@ def run_summarize(args, tasks):
     coordinate_to_snp = benchmark.load_snp_coordinate_map(args, list(allele_matrix.columns))
     work = partial(summarize_one, args=args, allele_matrix=allele_matrix,
                    coordinate_to_snp=coordinate_to_snp)
+    # Fold-0 ensembles read 9x the files; start them first.
+    order = sorted(tasks.items(), key=lambda item: (item[0][1] != 0, item[0]))
     with Pool(args.workers) as pool:
-        for n, message in enumerate(pool.imap_unordered(work, sorted(tasks.items())), 1):
+        for n, message in enumerate(pool.imap_unordered(work, order), 1):
             if message:
                 print(message, flush=True)
             if n % 20 == 0 or n == len(tasks):
@@ -248,21 +298,22 @@ def run_score(args, tasks):
     out_root = args.bench_dir / "alt_scores"
     zero_rows, check_rows = [], []
     cached = {}
-    for (checkpoint, fold), score_fp in sorted(tasks.items()):
+    for (checkpoint, fold), (published, _) in sorted(tasks.items()):
         if not cache_path(args.bench_dir, checkpoint, fold).exists():
             continue
-        published = pd.read_csv(score_fp, index_col=0)
         data = np.load(cache_path(args.bench_dir, checkpoint, fold))
         if list(data["snps"]) != list(published.index):
             raise ValueError(f"SNP order changed for {checkpoint} fold {fold}.")
         cached[(checkpoint, fold)] = data
         pred_pub = l2(data["scaled"])
-        check_rows.append({"checkpoint": checkpoint, "fold": fold,
-                           "max_abs_diff_vs_benchmark": float(np.nanmax(np.abs(pred_pub - published.pred)))})
+        if "pred" in published:
+            check_rows.append({"checkpoint": checkpoint, "fold": fold,
+                               "max_abs_diff_vs_benchmark": float(np.nanmax(np.abs(pred_pub - published.pred)))})
         zero_rows.append({"checkpoint": checkpoint, "fold": fold, "n_snps": len(published),
-                          "frac_zero_l2": float((published.pred == 0).mean()),
+                          "frac_zero_l2": float((pred_pub == 0).mean()),
                           "frac_zero_quantity": float((data["quantity"] == 0).any(axis=0).mean())})
-        write_metrics(out_root, score_fp.name, published, expt_targets, data, pred_pub)
+        write_metrics(out_root, f"{checkpoint}_fold_{fold}_l2_scores.csv.gz", published,
+                      expt_targets, data, pred_pub)
 
     epochs = sorted({int(m[1]) for c, _ in tasks if (m := EPOCH_RE.match(c))})
     folds = sorted({f for _, f in tasks})
@@ -272,7 +323,7 @@ def run_score(args, tasks):
             if any(k not in cached for k in keys):
                 print(f"{name}: fold {fold} lacks some epochs; skipping.")
                 continue
-            published = pd.read_csv(tasks[keys[0]], index_col=0)
+            published = tasks[keys[0]][0]
             mean = {field: np.mean([cached[k][field] for k in keys], axis=0)
                     for field in ("scaled", "shape", "quantity")}
             write_metrics(out_root, f"{name}_fold_{fold}_l2_scores.csv.gz", published,
@@ -290,10 +341,11 @@ def main():
     # mapping itself is identical to the benchmark's.
     logging.getLogger().setLevel(logging.ERROR)
     args = parse_args()
-    tasks = published_score_files(args.bench_dir)
+    score_files = published_score_files(args.bench_dir)
     if args.checkpoints is not None:
         keep = set(args.checkpoints.split(","))
-        tasks = {key: fp for key, fp in tasks.items() if key[0] in keep}
+        score_files = {key: fp for key, fp in score_files.items() if key[0] in keep}
+    tasks = build_tasks(args, score_files)
     print(f"{len(tasks)} checkpoint-fold score tables in {args.bench_dir}")
     if args.command in ("summarize", "all"):
         run_summarize(args, tasks)

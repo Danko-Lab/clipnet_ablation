@@ -11,6 +11,9 @@ fold, and recomputes:
 - ``fold_macro_spearman``: the same with per-fold Spearman rho.
 - ``fold_standardized_pooled``: Pearson r after z-scoring within each fold,
   which equals the (n_k - 1)-weighted mean of per-fold r.
+- ``pooled_folds``: Pearson r on the raw log L2 pooled over folds 1-9.
+- ``legacy_composite`` (the manuscript metric) and ``fold0_ensemble``: as in
+  the benchmark, when fold-0 ensemble scores (``*_fold_0_*``) are present.
 
 A fold where an entry predicts a constant (r undefined) is scored as r = 0;
 the benchmark summaries instead drop that fold from fold_macro.
@@ -41,7 +44,8 @@ import pandas as pd
 from scipy import stats
 
 SCORE_RE = re.compile(r"^(?P<checkpoint>.+)_fold_(?P<fold>\d+)_l2_scores\.csv\.gz$")
-METRICS = ("fold_macro", "fold_macro_spearman", "fold_standardized_pooled")
+METRICS = ("legacy_composite", "fold0_ensemble", "pooled_folds", "fold_macro",
+           "fold_macro_spearman", "fold_standardized_pooled")
 
 
 def parse_args():
@@ -54,6 +58,9 @@ def parse_args():
                         help="A:B labels to compare (default: every pair of labels).")
     parser.add_argument("--checkpoints", default=None,
                         help="Comma-separated checkpoints to keep for multi-checkpoint labels.")
+    parser.add_argument("--exclude_folds", default=None,
+                        help="Comma-separated folds to leave out, for sensitivity "
+                             "analyses next to the full 9-fold result.")
     parser.add_argument("--n_boot", type=int, default=10000)
     parser.add_argument("--ci", type=float, default=0.95)
     parser.add_argument("--seed", type=int, default=0)
@@ -95,7 +102,6 @@ def load_entries(specs, keep_checkpoints):
             c: {
                 fold: pd.read_csv(path, index_col=0)
                 for fold, path in folds.items()
-                if fold != 0
             }
             for c, folds in found.items()
         }
@@ -145,36 +151,79 @@ def fold_statistics(x, y, idx):
         np.nan_to_num(v, nan=0.0) for v in boot)
 
 
+def pooled_r(x, y, idx):
+    """Pearson r on SNPs pooled across folds, observed and per draw."""
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return (np.nan_to_num(row_pearson(x, y), nan=0.0),
+                np.nan_to_num(row_pearson(x[idx], y[idx]), nan=0.0))
+
+
 def bootstrap(entries, snps, n_boot, seed):
-    """Return point estimates, bootstrap draws, and per-fold r for every entry."""
+    """Return point estimates, bootstrap draws, and per-fold r for every entry.
+
+    Within-fold statistics use folds 1-9. pooled_folds pools the raw log L2 of
+    folds 1-9 (the benchmark's pooled_folds); legacy_composite also pools the
+    fold-0 ensemble SNPs (the manuscript metric); fold0_ensemble scores those
+    alone. The pooled statistics need fold 0 (``{checkpoint}_fold_0_*``) for
+    the last two and are NaN without it.
+    """
     rng = np.random.default_rng(seed)
     draws = {fold: rng.integers(0, len(ids), size=(n_boot, len(ids))) for fold, ids in snps.items()}
-    weights = np.array([len(ids) - 1 for ids in snps.values()], dtype=float)
+    held_out = [f for f in snps if f != 0]
+    weights = np.array([len(snps[f]) - 1 for f in held_out], dtype=float)
+    offsets = np.cumsum([0] + [len(snps[f]) for f in snps])[:-1]
+    offset = dict(zip(snps, offsets))
+    pooled_idx = np.hstack([draws[f] + offset[f] for f in held_out])
+    composite_idx = np.hstack([draws[f] + offset[f] for f in snps])
     point, boot, fold_rows = {}, {}, []
     for label, checkpoints in entries.items():
         for checkpoint, folds in checkpoints.items():
             r_point, rho_point, r_boot, rho_boot = [], [], [], []
+            xs, ys = [], []
             for fold, ids in snps.items():
                 scores = folds[fold].loc[ids]
                 x = scores.expt_log_l2.to_numpy(float)
                 y = scores.pred_log_l2.to_numpy(float)
+                xs.append(x)
+                ys.append(y)
                 (r, rho), (rb, rhob) = fold_statistics(x, y, draws[fold])
+                fold_rows.append({"label": label, "checkpoint": checkpoint, "fold": fold,
+                                  "n_snps": len(ids), "pearson": r, "spearman": rho})
+                if fold == 0:
+                    fold0 = (r, rb)
+                    continue
                 r_point.append(r)
                 rho_point.append(rho)
                 r_boot.append(rb)
                 rho_boot.append(rhob)
-                fold_rows.append({"label": label, "checkpoint": checkpoint, "fold": fold,
-                                  "n_snps": len(ids), "pearson": r, "spearman": rho})
+            x_all, y_all = np.concatenate(xs), np.concatenate(ys)
             r_point, rho_point = np.array(r_point), np.array(rho_point)
             r_boot, rho_boot = np.stack(r_boot), np.stack(rho_boot)
+            # pooled_idx indexes x_all (all folds, in snps order) but draws only
+            # from folds 1-9; the observed pooled r uses the same SNPs.
+            in_held = np.hstack([np.arange(offset[f], offset[f] + len(snps[f])) for f in held_out])
+            pooled_point = pooled_r(x_all[in_held], y_all[in_held], np.arange(len(in_held))[None])[0]
+            pooled_boot = pooled_r(x_all, y_all, pooled_idx)[1]
+            if 0 in snps:
+                composite_point, composite_boot = pooled_r(x_all, y_all, composite_idx)
+                fold0_point, fold0_boot = fold0
+            else:
+                composite_point = fold0_point = np.nan
+                composite_boot = fold0_boot = np.full(n_boot, np.nan)
             key = (label, checkpoint)
             point[key] = {
+                "legacy_composite": composite_point,
+                "fold0_ensemble": fold0_point,
+                "pooled_folds": pooled_point,
                 "fold_macro": fisher_mean(r_point, 0),
                 "fold_macro_spearman": fisher_mean(rho_point, 0),
                 "fold_standardized_pooled": np.average(r_point, weights=weights),
                 "fold_r": r_point,
             }
             boot[key] = {
+                "legacy_composite": composite_boot,
+                "fold0_ensemble": fold0_boot,
+                "pooled_folds": pooled_boot,
                 "fold_macro": fisher_mean(r_boot, 0),
                 "fold_macro_spearman": fisher_mean(rho_boot, 0),
                 "fold_standardized_pooled": weights @ r_boot / weights.sum(),
@@ -197,6 +246,8 @@ def entry_table(point, boot, ci):
     rows = []
     for key in point:
         for metric in METRICS:
+            if not np.isfinite(point[key][metric]):
+                continue
             low, high = interval(boot[key][metric], ci)
             rows.append({"label": key[0], "checkpoint": key[1], "metric": metric,
                          "estimate": point[key][metric], "boot_sd": boot[key][metric].std(ddof=1),
@@ -210,6 +261,8 @@ def compare(a_keys, b_keys, point, boot, ci, checkpoint_label):
     for metric in METRICS:
         a_point = np.mean([point[k][metric] for k in a_keys])
         b_point = np.mean([point[k][metric] for k in b_keys])
+        if not (np.isfinite(a_point) and np.isfinite(b_point)):
+            continue
         diff = (np.mean([boot[k][metric] for k in a_keys], axis=0)
                 - np.mean([boot[k][metric] for k in b_keys], axis=0))
         low, high = interval(diff, ci)
@@ -254,6 +307,9 @@ def main():
     keep = None if args.checkpoints is None else set(args.checkpoints.split(","))
     entries = load_entries(args.entry, keep)
     snps = common_snps(entries)
+    if args.exclude_folds:
+        excluded = {int(f) for f in args.exclude_folds.split(",")}
+        snps = {fold: ids for fold, ids in snps.items() if fold not in excluded}
     print("SNPs per fold:", {fold: len(ids) for fold, ids in snps.items()})
     pairs = ([tuple(p.split(":")) for p in args.pair] if args.pair
              else list(itertools.combinations(entries, 2)))

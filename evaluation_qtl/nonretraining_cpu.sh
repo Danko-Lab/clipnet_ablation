@@ -2,8 +2,9 @@
 
 # CPU half of the non-retraining clipnet vs ref_model analyses. For every
 # comparison set whose fold-mode predictions exist:
-#   1. alternative_qtl_scores.py: shape-only L2, coverage-partial L2,
-#      expression-only baselines, checkpoint-window ensembles, zero-L2 audit;
+#   1. alternative_qtl_scores.py: fold-0 ensemble, shape-only L2,
+#      coverage-partial L2, expression-only baselines, checkpoint-window
+#      ensembles, zero-L2 audit;
 #   2. bootstrap_qtl_ci.py: paired SNP-bootstrap CIs for clipnet - ref_model
 #      on each metric.
 # Sets whose GPU predictions (nonretraining_gpu_queue.sh) are not finished are
@@ -21,6 +22,8 @@ OUT="${OUT:-nonretraining_results}"
 WORKERS="${WORKERS:-16}"
 N_BOOT="${N_BOOT:-10000}"
 METRICS=(published_l2 published_l2_partial shape_l2 expression_only)
+# Every scored SNP, for the fold-0 ensemble (identical across runs).
+UNIVERSE=epoch_checkpoint_benchmark/clipnet/scores_published_l2/epoch_001_l2_scores.csv.gz
 
 cd "$(dirname "$0")"
 
@@ -52,6 +55,7 @@ for qtl in tiqtl diqtl; do
             echo "[${qtl} ${label}] alternative scores for ${dir}"
             "${PY}" alternative_qtl_scores.py all "${PREDICTIONS_ROOT}/${qtl}/${dir}" \
                 --qtl "${qtl}" --qtl_data_dir "${DATA_ROOT}/${qtl}" \
+                --universe "${PREDICTIONS_ROOT}/${qtl}/${UNIVERSE}" \
                 ${windows:+--windows "${windows}"} --workers "${WORKERS}" --skip_existing
         done
         for metric in "${METRICS[@]}"; do
