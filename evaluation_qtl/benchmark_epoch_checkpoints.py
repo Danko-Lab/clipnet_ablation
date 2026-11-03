@@ -84,6 +84,8 @@ FOLD_DIR_RE = re.compile(r"^(?:f|fold_?)(\d+)$")
 FOLD_FILE_RE = re.compile(r"(?:^|_)fold_?(\d+)(?:_|\.|$)")
 SEQUENCE_COORD_RE = re.compile(r"(chr[^:|,\s_]+):(\d+)-(\d+)")
 PROFILE_PSEUDOCOUNT = 1e-3
+MODEL_CACHE_SIZE = 9
+_MODEL_CACHE = {}
 L2_LOG_PSEUDOCOUNT = 1e-3
 
 
@@ -696,20 +698,46 @@ def create_predictor(args):
     )
 
 
+def load_checkpoint(checkpoint_fp):
+    """Load a checkpoint once and keep it for the rest of the epoch.
+
+    nn.predict_on_fasta reloads the model on every call, which dominates run
+    time when one checkpoint predicts every individual's FASTA.
+    """
+    key = str(checkpoint_fp)
+    if key not in _MODEL_CACHE:
+        import tensorflow as tf
+
+        if len(_MODEL_CACHE) >= MODEL_CACHE_SIZE:
+            _MODEL_CACHE.pop(next(iter(_MODEL_CACHE)))
+        _MODEL_CACHE[key] = tf.keras.models.load_model(key, compile=False)
+    return _MODEL_CACHE[key]
+
+
+def predict_checkpoint(nn, checkpoint_fp, sequence_fp):
+    """Same batching and outputs as nn.predict_on_fasta(low_mem=True)."""
+    from clipnet import rnn_v10, utils
+
+    sequence = utils.get_twohot_fasta_sequences(str(sequence_fp), silence=True)
+    model = load_checkpoint(checkpoint_fp)
+    batch_size = rnn_v10.batch_size
+    chunks = [
+        model.predict(sequence[i : i + batch_size], verbose=0)
+        for i in range(0, sequence.shape[0], batch_size)
+    ]
+    profile = np.concatenate([chunk[0] for chunk in chunks], axis=0)
+    quantity = np.concatenate([chunk[1] for chunk in chunks], axis=0)
+    if quantity.ndim == 2 and quantity.shape[1] == 1:
+        quantity = quantity[:, 0]
+    return profile, quantity
+
+
 def average_predictions(nn, checkpoint_paths, sequence_fp, args):
     profile_sum = None
     quantity_sum = None
 
     for checkpoint_fp in checkpoint_paths:
-        prediction = nn.predict_on_fasta(
-            model_fp=str(checkpoint_fp),
-            fasta_fp=str(sequence_fp),
-            low_mem=True,
-            silence=True,
-        )
-        profile, quantity = prediction
-        if quantity.ndim == 2 and quantity.shape[1] == 1:
-            quantity = quantity[:, 0]
+        profile, quantity = predict_checkpoint(nn, checkpoint_fp, sequence_fp)
         if profile_sum is None:
             profile_sum = np.zeros_like(profile, dtype=np.float64)
             quantity_sum = np.zeros_like(quantity, dtype=np.float64)
@@ -718,19 +746,6 @@ def average_predictions(nn, checkpoint_paths, sequence_fp, args):
 
     n_models = len(checkpoint_paths)
     return profile_sum / n_models, quantity_sum / n_models
-
-
-def predict_checkpoint(nn, checkpoint_fp, sequence_fp):
-    prediction = nn.predict_on_fasta(
-        model_fp=str(checkpoint_fp),
-        fasta_fp=str(sequence_fp),
-        low_mem=True,
-        silence=True,
-    )
-    profile, quantity = prediction
-    if quantity.ndim == 2 and quantity.shape[1] == 1:
-        quantity = quantity[:, 0]
-    return profile, quantity
 
 
 def scale_profile(track, quantity):

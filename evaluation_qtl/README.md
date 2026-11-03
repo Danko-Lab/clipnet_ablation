@@ -155,6 +155,9 @@ published CLIPNET controls, diagnostics, and aggregate plots in clean output
 namespaces.
 
 
+Example: aggregate the epoch and best-model fold summaries for each QTL set:
+
+```bash
 time python evaluation_qtl/summarize_qtl_benchmarks.py \
   published=predictions/tiqtl/published_clipnet_benchmark/zenodo_10408623/folds/published_clipnet_qtl_benchmark_summary_published_l2.csv \
   clipnet=predictions/tiqtl/epoch_checkpoint_benchmark/clipnet/folds/epoch_qtl_benchmark_summary_published_l2.csv \
@@ -174,3 +177,29 @@ time python evaluation_qtl/summarize_qtl_benchmarks.py \
   ref_best=predictions/diqtl/best_model_benchmark/ref_model/folds/best_model_qtl_benchmark_summary_published_l2.csv \
   mean_best=predictions/diqtl/best_model_benchmark/mean_model/folds/best_model_qtl_benchmark_summary_published_l2.csv \
   --output_dir predictions/diqtl_summaries/
+```
+
+## Non-retraining clipnet vs ref_model analyses
+
+These reuse existing checkpoints and predictions; no model is retrained.
+
+1. `nonretraining_gpu_queue.sh GPU` (one worker per GPU, in `screen`) runs
+   inference for the main `ensemble_models` / `reference_models` (composite
+   mode) and every 5-epoch checkpoint of the 100-epoch `five_epoch` runs. The
+   clipnet run uses `models/five_epoch_clipnet_clean`, a symlink view with one
+   run per fold (f3/f4 also hold a second run with a different loss scale).
+2. `nonretraining_cpu.sh` then, for each comparison set, runs:
+   - `alternative_qtl_scores.py`: from the raw prediction HDF5s, writes score
+     tables for the published log-L2 (recomputed; checked against the
+     benchmark), shape-only L2 (count head excluded), log-L2 partial r given
+     observed coverage, expression-only baselines, and checkpoint-window
+     ensembles, plus a per-checkpoint audit of SNPs with predicted L2 = 0
+     (the ReLU count head outputs exactly 0);
+   - `bootstrap_qtl_ci.py`: paired SNP-bootstrap CIs (SNPs resampled within
+     held-out folds) for fold_macro, fold_macro Spearman, and
+     fold_standardized_pooled, and for clipnet - ref_model differences;
+   - `summarize_nonretraining.py`: `nonretraining_results/README.md`, summary
+     CSVs, and epoch-trace plots.
+
+`nonretraining_cpu.sh` skips sets whose GPU jobs have not finished, so rerun it
+after they do.

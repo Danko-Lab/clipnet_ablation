@@ -172,8 +172,25 @@ class CLIPNET:
         self,
         model_dir,
         resume_checkpoint=None,
+        epochs=None,
+        initial_epoch=0,
+        restore_optimizer=False,
+        checkpoint_frequency=None,
     ):
-        """Fits a model based on specified arguments."""
+        """
+        Fits a model based on specified arguments.
+
+        epochs is the number of epochs to train in this call (default nn.epochs).
+        initial_epoch offsets epoch numbering, so resuming from an epoch-40
+        checkpoint with initial_epoch=40 writes *_epoch_041.hdf5 onwards.
+        restore_optimizer reloads the Adam state saved in resume_checkpoint
+        instead of starting a fresh optimizer.
+        """
+        if restore_optimizer and resume_checkpoint is None:
+            raise ValueError("restore_optimizer requires resume_checkpoint.")
+        n_epochs = nn.epochs if epochs is None else epochs
+        if checkpoint_frequency is None:
+            checkpoint_frequency = nn.checkpoint_frequency
         self.model_dir = model_dir
         with open(os.path.join(model_dir, "dataset_params.json"), "r") as handle:
             self.dataset_params = json.load(handle)
@@ -191,9 +208,10 @@ class CLIPNET:
                 f"n_gpus={self.n_gpus}, "
                 f"batch_size={batch_size}, "
                 f"learning_rate={opt_hyperparameters['learning_rate']}, "
-                f"epochs={nn.epochs}, "
+                f"epochs={n_epochs}, "
+                f"initial_epoch={initial_epoch}, "
                 f"early_stopping_patience={nn.early_stopping_patience}, "
-                f"checkpoint_frequency={nn.checkpoint_frequency}"
+                f"checkpoint_frequency={checkpoint_frequency}"
             )
             # load data
             train_args = {
@@ -213,7 +231,32 @@ class CLIPNET:
             train_gen = cgen.CGen(**train_args)
             val_gen = cgen.CGen(**val_args)
             # compile model
-            if resume_checkpoint is not None:
+            if resume_checkpoint is not None and restore_optimizer:
+                model = tf.keras.models.load_model(
+                    resume_checkpoint,
+                    compile=True,
+                    custom_objects={"corr": nn.metrics["shape"]},
+                )
+                n_steps = int(model.optimizer.iterations.numpy())
+                if n_steps == 0:
+                    raise RuntimeError(
+                        f"No optimizer state was restored from {resume_checkpoint}."
+                    )
+                restored_lr = float(model.optimizer.learning_rate.numpy())
+                print(
+                    "Restored optimizer state: "
+                    f"{type(model.optimizer).__name__}, iterations={n_steps}, "
+                    f"learning_rate={restored_lr}"
+                )
+                if not math.isclose(
+                    restored_lr, opt_hyperparameters["learning_rate"], rel_tol=1e-4
+                ):
+                    raise ValueError(
+                        f"Checkpoint learning rate {restored_lr} does not match "
+                        f"{opt_hyperparameters['learning_rate']} for n_gpus={self.n_gpus}; "
+                        "resume with the GPU count the checkpoint was trained with."
+                    )
+            elif resume_checkpoint is not None:
                 self.fit_model = tf.keras.models.load_model(
                     resume_checkpoint, compile=False
                 )
@@ -248,7 +291,7 @@ class CLIPNET:
                 self.model_filepath,
                 verbose=0,
                 save_best_only=False,
-                checkpoint_frequency=nn.checkpoint_frequency,
+                checkpoint_frequency=checkpoint_frequency,
             )
             early_stopping = tf.keras.callbacks.EarlyStopping(
                 monitor="val_loss",
@@ -275,7 +318,8 @@ class CLIPNET:
         fit_model = model.fit(
             x=train_gen,
             validation_data=val_gen,
-            epochs=nn.epochs,
+            epochs=initial_epoch + n_epochs,
+            initial_epoch=initial_epoch,
             steps_per_epoch=steps_per_epoch,
             verbose=0,
             callbacks=[

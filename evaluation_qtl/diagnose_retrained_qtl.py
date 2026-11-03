@@ -22,6 +22,8 @@ import pandas as pd
 
 
 DEFAULT_RUNS = ("clipnet", "mean_model", "ref_model")
+# fit.py runs from model_training/, so dataset_params.json paths are relative to it.
+DEFAULT_PARAMS_BASE_DIR = Path(__file__).resolve().parent.parent / "model_training"
 FOLDS = tuple(range(1, 10))
 QTL_SUMMARY_NAME = "best_model_qtl_benchmark_summary_published_l2.csv"
 
@@ -60,6 +62,15 @@ def parse_args():
         type=Path,
         default=Path("retrained_qtl_diagnostics"),
         help="Directory for diagnostic tables.",
+    )
+    parser.add_argument(
+        "--params_base_dir",
+        type=Path,
+        default=DEFAULT_PARAMS_BASE_DIR,
+        help=(
+            "Directory that relative paths in dataset_params.json are resolved "
+            "against (the directory fit.py was run from)."
+        ),
     )
     parser.add_argument(
         "--low_fold_threshold",
@@ -120,7 +131,12 @@ def filenames_match(paths, pattern):
     return all(pattern.fullmatch(Path(path).name) for path in paths)
 
 
-def audit_dataset_params(models_root, specs):
+def resolve_data_path(path, base_dir):
+    path = Path(path)
+    return path if path.is_absolute() else base_dir / path
+
+
+def audit_dataset_params(models_root, specs, params_base_dir):
     rows = []
     for spec in specs:
         run = spec["run"]
@@ -148,14 +164,18 @@ def audit_dataset_params(models_root, specs):
                 paths = path_list(params, key)
                 row[f"{key}_count"] = len(paths)
                 row[f"{key}_pattern_ok"] = filenames_match(paths, patterns["seq"])
-                row[f"{key}_all_exist"] = all(Path(path).exists() for path in paths)
+                row[f"{key}_all_exist"] = all(
+                    resolve_data_path(path, params_base_dir).exists() for path in paths
+                )
                 row[f"{key}_example"] = paths[0] if paths else ""
 
             for key in ("train_procap", "val_procap", "test_procap"):
                 paths = path_list(params, key)
                 row[f"{key}_count"] = len(paths)
                 row[f"{key}_pattern_ok"] = filenames_match(paths, patterns["procap"])
-                row[f"{key}_all_exist"] = all(Path(path).exists() for path in paths)
+                row[f"{key}_all_exist"] = all(
+                    resolve_data_path(path, params_base_dir).exists() for path in paths
+                )
                 row[f"{key}_example"] = paths[0] if paths else ""
 
             row["window_length"] = params.get("window_length")
@@ -363,7 +383,7 @@ def main():
     specs = run_specs(args.runs)
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    dataset = audit_dataset_params(args.models_root, specs)
+    dataset = audit_dataset_params(args.models_root, specs, args.params_base_dir)
     histories = audit_histories(args.models_root, specs)
     summaries, folds = audit_qtl_summaries(
         args.predictions_root, args.qtl, specs, args.low_fold_threshold
