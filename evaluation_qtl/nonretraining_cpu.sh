@@ -11,6 +11,7 @@
 # skipped, so rerun this after the GPU jobs end; finished summaries are reused.
 #
 #   screen -S qtl_cpu bash nonretraining_cpu.sh        # from evaluation_qtl/
+#   ONLY=main bash nonretraining_cpu.sh                # one comparison set
 
 set -euo pipefail
 
@@ -21,6 +22,7 @@ CLAIMS="${PREDICTIONS_ROOT}/.nonretraining_claims"
 OUT="${OUT:-nonretraining_results}"
 WORKERS="${WORKERS:-16}"
 N_BOOT="${N_BOOT:-10000}"
+ONLY="${ONLY:-}"
 METRICS=(published_l2 published_l2_partial shape_l2 expression_only)
 # Every scored SNP, for the fold-0 ensemble (identical across runs).
 UNIVERSE=epoch_checkpoint_benchmark/clipnet/scores_published_l2/epoch_001_l2_scores.csv.gz
@@ -46,6 +48,7 @@ ready() {  # both GPU jobs for this set and QTL have finished (or none needed)
 for qtl in tiqtl diqtl; do
     for set in "${SETS[@]}"; do
         IFS='|' read -r label clip_dir ref_dir checkpoint windows job <<<"${set}"
+        [[ -z "${ONLY}" || "${label}" == "${ONLY}" ]] || continue
         mkdir -p "${OUT}/${qtl}"
         if ! ready "${job}" "${qtl}"; then
             echo "[${qtl} ${label}] GPU predictions not finished; skipping."

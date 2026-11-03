@@ -1,0 +1,11 @@
+checkpoint,fold,n_snps,frac_zero_l2,frac_zero_quantity
+best_model,0,77,0.0,0.0
+best_model,1,82,0.0,0.0
+best_model,2,78,0.0,0.0
+best_model,3,81,0.0,0.0
+best_model,4,96,0.0,0.0
+best_model,5,94,0.0,0.0
+best_model,6,349,0.06017191977077364,0.1346704871060172
+best_model,7,99,0.010101010101010102,0.0
+best_model,8,137,0.0364963503649635,0.043795620437956206
+best_model,9,114,0.043859649122807015,0.05263157894736842
