@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --time=72:00:00
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:tP100:2
 #SBATCH --mail-type=all
 #SBATCH --mail-user=ayh8@cornell.edu
 #SBATCH --array=1-9%1
@@ -21,5 +21,8 @@
 #   sbatch --job-name=clip100 --export=ALL,ARM=clipnet train_100ep.sh
 
 conda activate clipnet
+
+# Checkpoints are written to cbsubscb17 lab storage (OUT_ROOT in the queue script).
+/programs/bin/labutils/mount_server cbsubscb17 /storage
 
 ONE_FOLD=1 bash train_100ep_queue.sh "${ARM:-ref_model}"

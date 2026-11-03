@@ -6,9 +6,10 @@
 #   - every 5-epoch checkpoint of the 100-epoch five_epoch runs (clipnet via the
 #     one-run-per-fold symlink view, ref_model as trained, with early stopping).
 #
-# Run one worker per GPU from evaluation_qtl/; workers share the job list
-# through atomic mkdir claims, and every job uses --skip_existing, so a killed
-# job can be retried by removing its claim:
+# Run one worker per GPU from evaluation_qtl/ (or nonretraining_gpu_slurm.sh on
+# cbsubscb); workers share the job list through atomic mkdir claims, and every
+# job uses --skip_existing, so a killed or failed job can be retried by removing
+# its claim directory:
 #
 #   screen -S qtl_gpu0 bash nonretraining_gpu_queue.sh 0
 #   screen -S qtl_gpu1 bash nonretraining_gpu_queue.sh 1
@@ -25,8 +26,15 @@ MAIN_ROOT="${MAIN_ROOT:-/fs/cbsubscb17/storage/projects/CLIPNET}"
 PREDICTIONS_ROOT="${PREDICTIONS_ROOT:-${ABLATION}/revision_predictions}"
 DATA_ROOT="${DATA_ROOT:-../data}"
 CLAIMS="${PREDICTIONS_ROOT}/.nonretraining_claims"
-# Pin the worker to its GPU; TensorFlow then sees it as device 0.
-export CUDA_VISIBLE_DEVICES="${GPU}"
+# Pin the worker to its GPU; TensorFlow then sees it as device 0. Under SLURM,
+# GPU indexes the devices SLURM assigned rather than the physical GPUs.
+IFS=, read -ra ASSIGNED <<<"${CUDA_VISIBLE_DEVICES:-}"
+if [[ -n "${SLURM_JOB_ID:-}" && ${#ASSIGNED[@]} -gt "${GPU}" ]]; then
+    export CUDA_VISIBLE_DEVICES="${ASSIGNED[${GPU}]}"
+else
+    export CUDA_VISIBLE_DEVICES="${GPU}"
+fi
+WORKER="$(hostname -s)_gpu${GPU}${SLURM_JOB_ID:+_slurm${SLURM_JOB_ID}}"
 
 cd "$(dirname "$0")"
 mkdir -p "${CLAIMS}"
@@ -55,13 +63,15 @@ for job in "${JOBS[@]}"; do
     name="${job%%|*}"
     cmd="${job#*|}"
     mkdir "${CLAIMS}/${name}" 2>/dev/null || continue
-    echo "[gpu${GPU} $(date -Is)] start ${name}"
+    echo "${WORKER} $(date -Is)" >"${CLAIMS}/${name}/worker"
+    echo "[${WORKER} $(date -Is)] start ${name}"
     log="${CLAIMS}/${name}/log.txt"
     if { time ${cmd} ; } >"${log}" 2>&1; then
         touch "${CLAIMS}/${name}/done"
-        echo "[gpu${GPU} $(date -Is)] done ${name}"
+        echo "[${WORKER} $(date -Is)] done ${name}"
     else
-        echo "[gpu${GPU} $(date -Is)] FAILED ${name}; see ${log}"
+        touch "${CLAIMS}/${name}/failed"
+        echo "[${WORKER} $(date -Is)] FAILED ${name}; see ${log}"
     fi
 done
-echo "[gpu${GPU}] no unclaimed jobs left"
+echo "[${WORKER}] no unclaimed jobs left"

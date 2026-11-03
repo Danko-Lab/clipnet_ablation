@@ -109,6 +109,9 @@ def summarize_one(task, args, allele_matrix, coordinate_to_snp):
     snp_idx = {snp: i for i, snp in enumerate(snps)}
     all_snps = list(allele_matrix.columns)
     pred_dir = args.bench_dir / "predictions" / checkpoint / f"fold_{fold}"
+    missing = [p for p in allele_matrix.index if not (pred_dir / f"{p}.h5").exists()]
+    if missing:
+        return f"{checkpoint} fold {fold}: {len(missing)} prediction files missing; skipped"
 
     scaled = shape = quantity = None
     count = np.zeros((2, len(snps)))
@@ -150,7 +153,9 @@ def run_summarize(args, tasks):
     work = partial(summarize_one, args=args, allele_matrix=allele_matrix,
                    coordinate_to_snp=coordinate_to_snp)
     with Pool(args.workers) as pool:
-        for n, _ in enumerate(pool.imap_unordered(work, sorted(tasks.items())), 1):
+        for n, message in enumerate(pool.imap_unordered(work, sorted(tasks.items())), 1):
+            if message:
+                print(message, flush=True)
             if n % 20 == 0 or n == len(tasks):
                 print(f"summarized {n}/{len(tasks)}", flush=True)
 
@@ -244,6 +249,8 @@ def run_score(args, tasks):
     zero_rows, check_rows = [], []
     cached = {}
     for (checkpoint, fold), score_fp in sorted(tasks.items()):
+        if not cache_path(args.bench_dir, checkpoint, fold).exists():
+            continue
         published = pd.read_csv(score_fp, index_col=0)
         data = np.load(cache_path(args.bench_dir, checkpoint, fold))
         if list(data["snps"]) != list(published.index):

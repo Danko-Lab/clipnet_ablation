@@ -12,6 +12,9 @@ fold, and recomputes:
 - ``fold_standardized_pooled``: Pearson r after z-scoring within each fold,
   which equals the (n_k - 1)-weighted mean of per-fold r.
 
+A fold where an entry predicts a constant (r undefined) is scored as r = 0;
+the benchmark summaries instead drop that fold from fold_macro.
+
 Every entry in a run is resampled with the same SNP draws, so differences
 between entries are paired. The intervals describe SNP sampling only: they do
 not include run-to-run or checkpoint-to-checkpoint training noise.
@@ -130,12 +133,16 @@ def fisher_mean(r, axis):
 def fold_statistics(x, y, idx):
     """Pearson and Spearman r for the observed data and each bootstrap draw."""
     xb, yb = x[idx], y[idx]
-    point = (row_pearson(x, y), stats.spearmanr(x, y).statistic)
-    boot = (
-        row_pearson(xb, yb),
-        row_pearson(stats.rankdata(xb, axis=1), stats.rankdata(yb, axis=1)),
-    )
-    return point, boot
+    with np.errstate(invalid="ignore", divide="ignore"):
+        point = (row_pearson(x, y), row_pearson(stats.rankdata(x), stats.rankdata(y)))
+        boot = (
+            row_pearson(xb, yb),
+            row_pearson(stats.rankdata(xb, axis=1), stats.rankdata(yb, axis=1)),
+        )
+    # A constant prediction (e.g. the count head outputs 0 everywhere) has no
+    # correlation; score it as r = 0 rather than dropping the fold.
+    return tuple(np.nan_to_num(v, nan=0.0) for v in point), tuple(
+        np.nan_to_num(v, nan=0.0) for v in boot)
 
 
 def bootstrap(entries, snps, n_boot, seed):
