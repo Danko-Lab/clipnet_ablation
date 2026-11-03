@@ -24,14 +24,11 @@ METRICS=(published_l2 published_l2_partial shape_l2 expression_only)
 
 cd "$(dirname "$0")"
 
-# label|clipnet bench dir|ref bench dir|checkpoint (empty = all)|windows|GPU job|folds to exclude
-# main_no_f4f9 drops the two main reference folds that early-stopped at epochs 5
-# and 4, which account for the main clipnet's whole validation-loss advantage.
+# label|clipnet bench dir|ref bench dir|checkpoint (empty = all)|windows|GPU job
 SETS=(
     "epochs20|epoch_checkpoint_benchmark/clipnet/folds|epoch_checkpoint_benchmark/ref_model/folds||1-5,6-10,11-15,16-20,1-20|"
     "best_model|best_model_benchmark/clipnet/folds|best_model_benchmark/ref_model/folds|best_model||"
     "main|published_clipnet_benchmark/main_ensemble_models/folds|published_clipnet_benchmark/main_reference_models/folds|published_model||main_reference_models"
-    "main_no_f4f9|published_clipnet_benchmark/main_ensemble_models/folds|published_clipnet_benchmark/main_reference_models/folds|published_model||main_reference_models|4,9"
     "epochs100|epoch_checkpoint_benchmark/five_epoch_clipnet/folds|epoch_checkpoint_benchmark/five_epoch_ref_model/folds||5-25,30-50,55-75,80-100,5-100,5-15|five_epoch_ref_model"
 )
 
@@ -45,7 +42,7 @@ ready() {  # both GPU jobs for this set and QTL have finished (or none needed)
 
 for qtl in tiqtl diqtl; do
     for set in "${SETS[@]}"; do
-        IFS='|' read -r label clip_dir ref_dir checkpoint windows job exclude <<<"${set}"
+        IFS='|' read -r label clip_dir ref_dir checkpoint windows job <<<"${set}"
         mkdir -p "${OUT}/${qtl}"
         if ! ready "${job}" "${qtl}"; then
             echo "[${qtl} ${label}] GPU predictions not finished; skipping."
@@ -62,13 +59,11 @@ for qtl in tiqtl diqtl; do
             "${PY}" bootstrap_qtl_ci.py \
                 --entry "clipnet=${PREDICTIONS_ROOT}/${qtl}/${clip_dir}/alt_scores/${metric}${suffix}" \
                 --entry "ref_model=${PREDICTIONS_ROOT}/${qtl}/${ref_dir}/alt_scores/${metric}${suffix}" \
-                ${exclude:+--exclude_folds "${exclude}"} \
                 --n_boot "${N_BOOT}" \
                 --output_dir "${OUT}/${qtl}" \
                 --prefix "${label}_${metric}" >"${OUT}/${qtl}/${label}_${metric}.log" 2>&1 \
                 || echo "bootstrap failed: ${qtl} ${label} ${metric}; see ${OUT}/${qtl}/${label}_${metric}.log"
         done
-        [[ -n "${exclude}" ]] && continue  # same models as the full set
         for dir in "${clip_dir}" "${ref_dir}"; do
             cp "${PREDICTIONS_ROOT}/${qtl}/${dir}/alt_scores/zero_l2.csv" \
                 "${OUT}/${qtl}/${label}_$(basename "$(dirname "${dir}")")_zero_l2.csv"
