@@ -6,10 +6,11 @@
 #   - every 5-epoch checkpoint of the 100-epoch five_epoch runs (clipnet via the
 #     one-run-per-fold symlink view, ref_model as trained, with early stopping).
 #
-# Run one worker per GPU from evaluation_qtl/ (or nonretraining_gpu_slurm.sh on
-# cbsubscb); workers share the job list through atomic mkdir claims, and every
-# job uses --skip_existing, so a killed or failed job can be retried by removing
-# its claim directory:
+# Run one worker per GPU from evaluation_qtl/ (or the nonretraining_gpu_slurm.sh
+# array on cbsubscb); workers share the job list through atomic mkdir claims,
+# and every job uses --skip_existing, so a killed or failed job can be retried
+# by removing its claim directory. A worker keeps taking jobs until none
+# remain, or runs one job and exits when ONE_JOB=1 (used by the SLURM array):
 #
 #   screen -S qtl_gpu0 bash nonretraining_gpu_queue.sh 0
 #   screen -S qtl_gpu1 bash nonretraining_gpu_queue.sh 1
@@ -26,6 +27,7 @@ MAIN_ROOT="${MAIN_ROOT:-/fs/cbsubscb17/storage/projects/CLIPNET}"
 PREDICTIONS_ROOT="${PREDICTIONS_ROOT:-${ABLATION}/revision_predictions}"
 DATA_ROOT="${DATA_ROOT:-../data}"
 CLAIMS="${PREDICTIONS_ROOT}/.nonretraining_claims"
+ONE_JOB="${ONE_JOB:-0}"
 # Pin the worker to its GPU; TensorFlow then sees it as device 0. Under SLURM,
 # GPU indexes the devices SLURM assigned rather than the physical GPUs.
 IFS=, read -ra ASSIGNED <<<"${CUDA_VISIBLE_DEVICES:-}"
@@ -73,5 +75,6 @@ for job in "${JOBS[@]}"; do
         touch "${CLAIMS}/${name}/failed"
         echo "[${WORKER} $(date -Is)] FAILED ${name}; see ${log}"
     fi
+    [[ "${ONE_JOB}" == 1 ]] && break
 done
-echo "[${WORKER}] no unclaimed jobs left"
+[[ "${ONE_JOB}" == 1 ]] && echo "[${WORKER}] exiting after one job" || echo "[${WORKER}] no unclaimed jobs left"
