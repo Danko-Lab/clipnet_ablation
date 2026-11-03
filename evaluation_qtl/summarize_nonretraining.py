@@ -22,7 +22,7 @@ SCORES = {
     "shape_l2": "shape-only log-L2",
     "expression_only": "expression-only baseline",
 }
-SETS = ("main", "best_model", "epochs20", "epochs100")
+SETS = ("main_no_f4f9", "main", "best_model", "epochs20", "epochs100")
 COLORS = {"clipnet": "#2a78d6", "ref_model": "#eb6834"}
 
 

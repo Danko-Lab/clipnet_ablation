@@ -54,6 +54,8 @@ def parse_args():
                         help="A:B labels to compare (default: every pair of labels).")
     parser.add_argument("--checkpoints", default=None,
                         help="Comma-separated checkpoints to keep for multi-checkpoint labels.")
+    parser.add_argument("--exclude_folds", default=None,
+                        help="Comma-separated folds to leave out (e.g. 4,9).")
     parser.add_argument("--n_boot", type=int, default=10000)
     parser.add_argument("--ci", type=float, default=0.95)
     parser.add_argument("--seed", type=int, default=0)
@@ -254,6 +256,9 @@ def main():
     keep = None if args.checkpoints is None else set(args.checkpoints.split(","))
     entries = load_entries(args.entry, keep)
     snps = common_snps(entries)
+    if args.exclude_folds:
+        excluded = {int(f) for f in args.exclude_folds.split(",")}
+        snps = {fold: ids for fold, ids in snps.items() if fold not in excluded}
     print("SNPs per fold:", {fold: len(ids) for fold, ids in snps.items()})
     pairs = ([tuple(p.split(":")) for p in args.pair] if args.pair
              else list(itertools.combinations(entries, 2)))
