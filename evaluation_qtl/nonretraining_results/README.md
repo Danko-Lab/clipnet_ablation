@@ -16,6 +16,14 @@ Differences are clipnet - ref_model with 95% paired SNP-bootstrap CIs (SNPs resa
 | diqtl | best_model | fold-0 ensemble | best_model | 0.794 | 0.817 | -0.023 | -0.069 | 0.019 | 0.290 | 3.000 |
 | diqtl | best_model | within-fold Spearman | best_model | 0.565 | 0.624 | -0.059 | -0.103 | -0.017 | 0.005 | 3.000 |
 | diqtl | best_model | within-fold Spearman | coverage | best_model | 0.438 | 0.507 | -0.069 | -0.120 | -0.016 | 0.009 | 3.000 |
+| diqtl | epochs100 | legacy composite (manuscript) | mean_over_epochs | 0.415 | 0.415 | 0.000 | -0.027 | 0.027 | 0.982 | nan |
+| diqtl | epochs100 | fold-0 ensemble | mean_over_epochs | 0.818 | 0.820 | -0.003 | -0.027 | 0.020 | 0.794 | nan |
+| diqtl | epochs100 | within-fold Spearman | mean_over_epochs | 0.609 | 0.615 | -0.006 | -0.031 | 0.020 | 0.659 | nan |
+| diqtl | epochs100 | within-fold Spearman | coverage | mean_over_epochs | 0.441 | 0.472 | -0.031 | -0.066 | 0.005 | 0.087 | nan |
+| diqtl | epochs100 | legacy composite (manuscript) | window_e005-e015 | 0.639 | 0.527 | 0.113 | 0.074 | 0.152 | 0.000 | 4.000 |
+| diqtl | epochs100 | fold-0 ensemble | window_e005-e015 | 0.821 | 0.822 | -0.001 | -0.029 | 0.027 | 0.898 | 4.000 |
+| diqtl | epochs100 | within-fold Spearman | window_e005-e015 | 0.639 | 0.666 | -0.026 | -0.055 | 0.003 | 0.079 | 4.000 |
+| diqtl | epochs100 | within-fold Spearman | coverage | window_e005-e015 | 0.528 | 0.560 | -0.032 | -0.071 | 0.008 | 0.116 | 3.000 |
 | diqtl | epochs20 | legacy composite (manuscript) | mean_over_epochs | 0.380 | 0.378 | 0.002 | -0.015 | 0.020 | 0.806 | nan |
 | diqtl | epochs20 | fold-0 ensemble | mean_over_epochs | 0.820 | 0.821 | -0.001 | -0.020 | 0.021 | 0.896 | nan |
 | diqtl | epochs20 | within-fold Spearman | mean_over_epochs | 0.613 | 0.614 | -0.001 | -0.016 | 0.014 | 0.887 | nan |
@@ -48,6 +56,14 @@ Differences are clipnet - ref_model with 95% paired SNP-bootstrap CIs (SNPs resa
 | tiqtl | best_model | fold-0 ensemble | best_model | 0.538 | 0.645 | -0.107 | -0.159 | -0.057 | 0.000 | 3.000 |
 | tiqtl | best_model | within-fold Spearman | best_model | 0.508 | 0.548 | -0.040 | -0.076 | -0.002 | 0.035 | 3.000 |
 | tiqtl | best_model | within-fold Spearman | coverage | best_model | 0.394 | 0.404 | -0.010 | -0.054 | 0.035 | 0.651 | 4.000 |
+| tiqtl | epochs100 | legacy composite (manuscript) | mean_over_epochs | 0.342 | 0.329 | 0.013 | -0.008 | 0.036 | 0.217 | nan |
+| tiqtl | epochs100 | fold-0 ensemble | mean_over_epochs | 0.604 | 0.645 | -0.041 | -0.068 | -0.015 | 0.002 | nan |
+| tiqtl | epochs100 | within-fold Spearman | mean_over_epochs | 0.563 | 0.552 | 0.011 | -0.011 | 0.033 | 0.317 | nan |
+| tiqtl | epochs100 | within-fold Spearman | coverage | mean_over_epochs | 0.419 | 0.405 | 0.013 | -0.015 | 0.041 | 0.340 | nan |
+| tiqtl | epochs100 | legacy composite (manuscript) | window_e005-e015 | 0.582 | 0.460 | 0.123 | 0.091 | 0.154 | 0.000 | 5.000 |
+| tiqtl | epochs100 | fold-0 ensemble | window_e005-e015 | 0.598 | 0.647 | -0.049 | -0.081 | -0.018 | 0.002 | 5.000 |
+| tiqtl | epochs100 | within-fold Spearman | window_e005-e015 | 0.606 | 0.622 | -0.016 | -0.043 | 0.011 | 0.246 | 5.000 |
+| tiqtl | epochs100 | within-fold Spearman | coverage | window_e005-e015 | 0.529 | 0.521 | 0.009 | -0.023 | 0.040 | 0.597 | 7.000 |
 | tiqtl | epochs20 | legacy composite (manuscript) | mean_over_epochs | 0.327 | 0.345 | -0.018 | -0.033 | -0.004 | 0.016 | nan |
 | tiqtl | epochs20 | fold-0 ensemble | mean_over_epochs | 0.616 | 0.666 | -0.050 | -0.080 | -0.026 | 0.000 | nan |
 | tiqtl | epochs20 | within-fold Spearman | mean_over_epochs | 0.551 | 0.568 | -0.017 | -0.030 | -0.004 | 0.014 | nan |
@@ -84,6 +100,12 @@ Differences are clipnet - ref_model with 95% paired SNP-bootstrap CIs (SNPs resa
 | diqtl | best_model | within-fold Pearson | best_model | 0.533 | 0.627 | -0.094 | -0.136 | -0.049 | 0.000 | 3.000 |
 | diqtl | best_model | shape-only (within-fold Pearson) | best_model | 0.321 | 0.250 | 0.071 | 0.018 | 0.124 | 0.010 | 6.000 |
 | diqtl | best_model | expression-only baseline | best_model | 0.684 | 0.691 | -0.007 | -0.034 | 0.018 | 0.567 | 4.000 |
+| diqtl | epochs100 | within-fold Pearson | mean_over_epochs | 0.602 | 0.616 | -0.014 | -0.040 | 0.015 | 0.390 | nan |
+| diqtl | epochs100 | shape-only (within-fold Pearson) | mean_over_epochs | 0.218 | 0.229 | -0.011 | -0.043 | 0.020 | 0.475 | nan |
+| diqtl | epochs100 | expression-only baseline | mean_over_epochs | 0.650 | 0.645 | 0.004 | -0.017 | 0.026 | 0.669 | nan |
+| diqtl | epochs100 | within-fold Pearson | window_e005-e015 | 0.642 | 0.665 | -0.024 | -0.051 | 0.004 | 0.089 | 4.000 |
+| diqtl | epochs100 | shape-only (within-fold Pearson) | window_e005-e015 | 0.234 | 0.238 | -0.004 | -0.040 | 0.031 | 0.802 | 3.000 |
+| diqtl | epochs100 | expression-only baseline | window_e005-e015 | 0.714 | 0.695 | 0.019 | -0.004 | 0.039 | 0.099 | 6.000 |
 | diqtl | epochs20 | within-fold Pearson | mean_over_epochs | 0.610 | 0.610 | -0.000 | -0.014 | 0.013 | 0.960 | nan |
 | diqtl | epochs20 | shape-only (within-fold Pearson) | mean_over_epochs | 0.222 | 0.227 | -0.004 | -0.030 | 0.022 | 0.748 | nan |
 | diqtl | epochs20 | expression-only baseline | mean_over_epochs | 0.636 | 0.634 | 0.002 | -0.011 | 0.015 | 0.790 | nan |
@@ -108,6 +130,12 @@ Differences are clipnet - ref_model with 95% paired SNP-bootstrap CIs (SNPs resa
 | tiqtl | best_model | within-fold Pearson | best_model | 0.467 | 0.516 | -0.049 | -0.094 | -0.003 | 0.036 | 3.000 |
 | tiqtl | best_model | shape-only (within-fold Pearson) | best_model | 0.313 | 0.238 | 0.075 | 0.037 | 0.113 | 0.000 | 7.000 |
 | tiqtl | best_model | expression-only baseline | best_model | 0.637 | 0.635 | 0.001 | -0.019 | 0.024 | 0.829 | 6.000 |
+| tiqtl | epochs100 | within-fold Pearson | mean_over_epochs | 0.554 | 0.548 | 0.006 | -0.015 | 0.027 | 0.560 | nan |
+| tiqtl | epochs100 | shape-only (within-fold Pearson) | mean_over_epochs | 0.185 | 0.185 | 0.000 | -0.024 | 0.024 | 0.989 | nan |
+| tiqtl | epochs100 | expression-only baseline | mean_over_epochs | 0.588 | 0.595 | -0.007 | -0.024 | 0.012 | 0.504 | nan |
+| tiqtl | epochs100 | within-fold Pearson | window_e005-e015 | 0.604 | 0.616 | -0.013 | -0.037 | 0.012 | 0.318 | 5.000 |
+| tiqtl | epochs100 | shape-only (within-fold Pearson) | window_e005-e015 | 0.199 | 0.193 | 0.006 | -0.024 | 0.034 | 0.741 | 5.000 |
+| tiqtl | epochs100 | expression-only baseline | window_e005-e015 | 0.661 | 0.666 | -0.005 | -0.020 | 0.009 | 0.475 | 3.000 |
 | tiqtl | epochs20 | within-fold Pearson | mean_over_epochs | 0.542 | 0.560 | -0.018 | -0.030 | -0.006 | 0.005 | nan |
 | tiqtl | epochs20 | shape-only (within-fold Pearson) | mean_over_epochs | 0.198 | 0.205 | -0.008 | -0.027 | 0.011 | 0.411 | nan |
 | tiqtl | epochs20 | expression-only baseline | mean_over_epochs | 0.589 | 0.591 | -0.002 | -0.013 | 0.007 | 0.613 | nan |
@@ -138,12 +166,16 @@ Fraction of held-out SNPs whose predicted L2 is exactly 0 because the ReLU count
 |---|---|---|---|---|---|---|
 | diqtl | best_model | clipnet | 9 | 0.017 | 0.000 | 0 |
 | diqtl | best_model | ref_model | 9 | 0.179 | 0.222 | 0 |
+| diqtl | epochs100 | clipnet | 180 | 0.189 | 0.150 | 2 |
+| diqtl | epochs100 | ref_model | 61 | 0.289 | 0.328 | 2 |
 | diqtl | epochs20 | clipnet | 180 | 0.271 | 0.283 | 0 |
 | diqtl | epochs20 | ref_model | 180 | 0.261 | 0.272 | 5 |
 | diqtl | main | clipnet | 9 | 0.003 | 0.000 | 0 |
 | diqtl | main | ref_model | 9 | 0.155 | 0.000 | 0 |
 | tiqtl | best_model | clipnet | 9 | 0.012 | 0.000 | 0 |
 | tiqtl | best_model | ref_model | 9 | 0.188 | 0.222 | 0 |
+| tiqtl | epochs100 | clipnet | 180 | 0.217 | 0.206 | 2 |
+| tiqtl | epochs100 | ref_model | 61 | 0.323 | 0.393 | 2 |
 | tiqtl | epochs20 | clipnet | 180 | 0.295 | 0.306 | 2 |
 | tiqtl | epochs20 | ref_model | 180 | 0.288 | 0.311 | 5 |
 | tiqtl | main | clipnet | 9 | 0.001 | 0.000 | 0 |
@@ -152,4 +184,6 @@ Fraction of held-out SNPs whose predicted L2 is exactly 0 because the ReLU count
 ## Epoch traces
 
 ![diqtl_epochs20_epochs.png](diqtl_epochs20_epochs.png)
+![diqtl_epochs100_epochs.png](diqtl_epochs100_epochs.png)
 ![tiqtl_epochs20_epochs.png](tiqtl_epochs20_epochs.png)
+![tiqtl_epochs100_epochs.png](tiqtl_epochs100_epochs.png)
