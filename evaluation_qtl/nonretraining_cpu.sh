@@ -35,13 +35,15 @@ SETS=(
     "best_model|best_model_benchmark/clipnet/folds|best_model_benchmark/ref_model/folds|best_model||"
     "main|published_clipnet_benchmark/main_ensemble_models/folds|published_clipnet_benchmark/main_reference_models/folds|published_model||main_reference_models"
     "epochs100|epoch_checkpoint_benchmark/five_epoch_clipnet/folds|epoch_checkpoint_benchmark/five_epoch_ref_model/folds||5-25,30-50,55-75,80-100,5-100,5-15|five_epoch_ref_model"
+    "epochs100_noes|epoch_checkpoint_benchmark/five_epoch_clipnet/folds|epoch_checkpoint_benchmark/ref100_ref_model/folds||5-25,30-50,55-75,80-100,5-100,5-15|ref100_ref_model"
 )
 
 ready() {  # both GPU jobs for this set and QTL have finished (or none needed)
     local job=$1 qtl=$2
     [[ -z "${job}" ]] && return 0
     [[ -f "${CLAIMS}/${job}_${qtl}/done" ]] || return 1
-    [[ "${job}" != five_epoch_ref_model ]] || [[ -f "${CLAIMS}/five_epoch_clipnet_${qtl}/done" ]] || return 1
+    [[ "${job}" != five_epoch_ref_model && "${job}" != ref100_ref_model ]] \
+        || [[ -f "${CLAIMS}/five_epoch_clipnet_${qtl}/done" ]] || return 1
     [[ "${job}" != main_reference_models ]] || [[ -f "${CLAIMS}/main_ensemble_models_${qtl}/done" ]]
 }
 

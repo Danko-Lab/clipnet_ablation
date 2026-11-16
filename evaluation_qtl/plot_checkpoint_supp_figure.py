@@ -12,8 +12,8 @@ Layout (columns: 20-epoch run, then 100-epoch run; two metrics per run):
 - row 3: mean fraction of held-out SNPs (folds 1-9) whose predicted L2 is
   exactly 0 because the ReLU count head clips every individual to 0.
 
-ref_model checkpoints are shown only at epochs where all nine fold models
-exist; the 100-epoch ref runs early-stopped, so they end at epoch 15.
+Both arms train for 100 epochs without early stopping in the 100-epoch run
+(clipnet: five_epoch runs; ref_model: ref_model_100ep reruns).
 """
 
 import argparse
@@ -30,12 +30,12 @@ METRICS = {
     ("published_l2", "legacy_composite"): "Composite log-L2 Pearson",
     ("published_l2_partial", "fold_macro_spearman"): "Spearman | coverage",
 }
-RUNS = {"epochs20": "20-epoch run", "epochs100": "100-epoch run"}
+RUNS = {"epochs20": "20-epoch run", "epochs100_noes": "100-epoch run"}
 ZERO_FILES = {
     "epochs20": {"clipnet": "epochs20_clipnet_zero_l2.csv",
                  "ref_model": "epochs20_ref_model_zero_l2.csv"},
-    "epochs100": {"clipnet": "epochs100_five_epoch_clipnet_zero_l2.csv",
-                  "ref_model": "epochs100_five_epoch_ref_model_zero_l2.csv"},
+    "epochs100_noes": {"clipnet": "epochs100_noes_five_epoch_clipnet_zero_l2.csv",
+                       "ref_model": "epochs100_noes_ref100_ref_model_zero_l2.csv"},
 }
 QTLS = {"tiqtl": "tiQTL", "diqtl": "diQTL"}
 INK, MUTED, GRID = "#222222", "#666666", "#e6e6e6"
@@ -111,7 +111,7 @@ def main():
             sub = zero_fraction(args.results_dir, qtl, run, arm)
             ax.plot(sub.epoch, sub.frac_zero_l2, color=color, linewidth=1.4,
                     marker="o", markersize=2.8, label=name)
-        ax.set_ylim(-0.02, 0.62)
+        ax.set_ylim(-0.02, 0.7)
         style(ax)
         ax.set_title(f"{QTLS[qtl]}: zero-L2 SNPs", fontsize=7.5, color=INK, pad=4)
         ax.set_xlabel("Epoch", color=INK, fontsize=8)

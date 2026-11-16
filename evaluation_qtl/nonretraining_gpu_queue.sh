@@ -4,7 +4,9 @@
 #   - main (early-stopped, best-val-loss) ensemble_models and reference_models,
 #     scored with the current pipeline (composite = ensemble + held-out folds);
 #   - every 5-epoch checkpoint of the 100-epoch five_epoch runs (clipnet via the
-#     one-run-per-fold symlink view, ref_model as trained, with early stopping).
+#     one-run-per-fold symlink view, ref_model as trained, with early stopping);
+#   - every 5-epoch checkpoint of the ref_model_100ep reruns (no early stopping,
+#     model_training/train_100ep_queue.sh).
 #
 # Run one worker per GPU from evaluation_qtl/ (or the nonretraining_gpu_slurm.sh
 # array on cbsubscb); workers share the job list through atomic mkdir claims,
@@ -51,6 +53,9 @@ common() {
 
 # name|command, longest first so the two workers finish close together.
 JOBS=()
+for qtl in tiqtl diqtl; do
+    JOBS+=("ref100_ref_model_${qtl}|${PY} benchmark_epoch_checkpoints.py all ${ABLATION}/models/ref_model_100ep --mode folds --run_name ref100_ref_model $(common ${qtl})")
+done
 for qtl in tiqtl diqtl; do
     JOBS+=("five_epoch_clipnet_${qtl}|${PY} benchmark_epoch_checkpoints.py all ${ABLATION}/models/five_epoch_clipnet_clean --mode folds --run_name five_epoch_clipnet $(common ${qtl})")
 done

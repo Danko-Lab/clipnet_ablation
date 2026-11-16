@@ -35,7 +35,8 @@ DIAGNOSTIC = {
     ("expression_only", "fold_macro"): "expression-only baseline",
 }
 VIEWS = {**HEADLINE, **DIAGNOSTIC}
-SETS = ("main", "best_model", "epochs20", "epochs100")
+# Longest prefix first: set names are matched by filename prefix.
+SETS = ("main", "best_model", "epochs20", "epochs100_noes", "epochs100")
 COLORS = {"clipnet": "#2a78d6", "ref_model": "#eb6834"}
 
 
@@ -156,7 +157,7 @@ def main():
 
     plots = []
     for qtl in sorted(entries.qtl.unique()):
-        for set_name in ("epochs20", "epochs100"):
+        for set_name in ("epochs20", "epochs100", "epochs100_noes"):
             out_fp = args.results_dir / f"{qtl}_{set_name}_epochs.png"
             if plot_epochs(entries, qtl, set_name, out_fp):
                 plots.append(out_fp.name)

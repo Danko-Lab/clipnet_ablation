@@ -24,6 +24,34 @@ Differences are clipnet - ref_model with 95% paired SNP-bootstrap CIs (SNPs resa
 | diqtl | epochs100 | fold-0 ensemble | window_e005-e015 | 0.821 | 0.822 | -0.001 | -0.029 | 0.027 | 0.898 | 4.000 |
 | diqtl | epochs100 | within-fold Spearman | window_e005-e015 | 0.639 | 0.666 | -0.026 | -0.055 | 0.003 | 0.079 | 4.000 |
 | diqtl | epochs100 | within-fold Spearman | coverage | window_e005-e015 | 0.528 | 0.560 | -0.032 | -0.071 | 0.008 | 0.116 | 3.000 |
+| diqtl | epochs100_noes | legacy composite (manuscript) | mean_over_epochs | 0.414 | 0.304 | 0.110 | 0.092 | 0.128 | 0.000 | nan |
+| diqtl | epochs100_noes | fold-0 ensemble | mean_over_epochs | 0.816 | 0.792 | 0.024 | -0.003 | 0.053 | 0.081 | nan |
+| diqtl | epochs100_noes | within-fold Spearman | mean_over_epochs | 0.605 | 0.515 | 0.090 | 0.070 | 0.112 | 0.000 | nan |
+| diqtl | epochs100_noes | within-fold Spearman | coverage | mean_over_epochs | 0.443 | 0.362 | 0.081 | 0.054 | 0.107 | 0.000 | nan |
+| diqtl | epochs100_noes | legacy composite (manuscript) | window_e005-e015 | 0.639 | 0.652 | -0.013 | -0.041 | 0.015 | 0.373 | 3.000 |
+| diqtl | epochs100_noes | fold-0 ensemble | window_e005-e015 | 0.821 | 0.823 | -0.002 | -0.024 | 0.023 | 0.861 | 3.000 |
+| diqtl | epochs100_noes | within-fold Spearman | window_e005-e015 | 0.639 | 0.681 | -0.041 | -0.071 | -0.012 | 0.008 | 3.000 |
+| diqtl | epochs100_noes | within-fold Spearman | coverage | window_e005-e015 | 0.528 | 0.563 | -0.035 | -0.074 | 0.004 | 0.079 | 2.000 |
+| diqtl | epochs100_noes | legacy composite (manuscript) | window_e005-e025 | 0.566 | 0.639 | -0.073 | -0.105 | -0.041 | 0.000 | 1.000 |
+| diqtl | epochs100_noes | fold-0 ensemble | window_e005-e025 | 0.815 | 0.812 | 0.003 | -0.019 | 0.029 | 0.825 | 1.000 |
+| diqtl | epochs100_noes | within-fold Spearman | window_e005-e025 | 0.628 | 0.692 | -0.064 | -0.092 | -0.037 | 0.000 | 1.000 |
+| diqtl | epochs100_noes | within-fold Spearman | coverage | window_e005-e025 | 0.538 | 0.574 | -0.036 | -0.074 | 0.000 | 0.052 | 2.000 |
+| diqtl | epochs100_noes | legacy composite (manuscript) | window_e005-e100 | 0.569 | 0.536 | 0.033 | 0.002 | 0.065 | 0.037 | 6.000 |
+| diqtl | epochs100_noes | fold-0 ensemble | window_e005-e100 | 0.821 | 0.797 | 0.024 | -0.010 | 0.060 | 0.177 | 6.000 |
+| diqtl | epochs100_noes | within-fold Spearman | window_e005-e100 | 0.622 | 0.552 | 0.070 | 0.035 | 0.105 | 0.000 | 6.000 |
+| diqtl | epochs100_noes | within-fold Spearman | coverage | window_e005-e100 | 0.511 | 0.492 | 0.019 | -0.021 | 0.058 | 0.346 | 7.000 |
+| diqtl | epochs100_noes | legacy composite (manuscript) | window_e030-e050 | 0.557 | 0.540 | 0.017 | -0.018 | 0.052 | 0.345 | 6.000 |
+| diqtl | epochs100_noes | fold-0 ensemble | window_e030-e050 | 0.820 | 0.810 | 0.010 | -0.026 | 0.049 | 0.564 | 6.000 |
+| diqtl | epochs100_noes | within-fold Spearman | window_e030-e050 | 0.656 | 0.566 | 0.090 | 0.051 | 0.129 | 0.000 | 6.000 |
+| diqtl | epochs100_noes | within-fold Spearman | coverage | window_e030-e050 | 0.531 | 0.489 | 0.042 | -0.001 | 0.084 | 0.059 | 6.000 |
+| diqtl | epochs100_noes | legacy composite (manuscript) | window_e055-e075 | 0.545 | 0.466 | 0.079 | 0.032 | 0.125 | 0.001 | 7.000 |
+| diqtl | epochs100_noes | fold-0 ensemble | window_e055-e075 | 0.815 | 0.781 | 0.033 | -0.008 | 0.082 | 0.116 | 7.000 |
+| diqtl | epochs100_noes | within-fold Spearman | window_e055-e075 | 0.570 | 0.488 | 0.082 | 0.037 | 0.126 | 0.000 | 7.000 |
+| diqtl | epochs100_noes | within-fold Spearman | coverage | window_e055-e075 | 0.458 | 0.440 | 0.018 | -0.030 | 0.066 | 0.481 | 7.000 |
+| diqtl | epochs100_noes | legacy composite (manuscript) | window_e080-e100 | 0.517 | 0.427 | 0.090 | 0.037 | 0.150 | 0.001 | 6.000 |
+| diqtl | epochs100_noes | fold-0 ensemble | window_e080-e100 | 0.828 | 0.780 | 0.048 | 0.009 | 0.090 | 0.013 | 6.000 |
+| diqtl | epochs100_noes | within-fold Spearman | window_e080-e100 | 0.609 | 0.509 | 0.100 | 0.057 | 0.144 | 0.000 | 6.000 |
+| diqtl | epochs100_noes | within-fold Spearman | coverage | window_e080-e100 | 0.471 | 0.439 | 0.032 | -0.016 | 0.081 | 0.202 | 6.000 |
 | diqtl | epochs20 | legacy composite (manuscript) | mean_over_epochs | 0.380 | 0.378 | 0.002 | -0.015 | 0.020 | 0.806 | nan |
 | diqtl | epochs20 | fold-0 ensemble | mean_over_epochs | 0.820 | 0.821 | -0.001 | -0.020 | 0.021 | 0.896 | nan |
 | diqtl | epochs20 | within-fold Spearman | mean_over_epochs | 0.613 | 0.614 | -0.001 | -0.016 | 0.014 | 0.887 | nan |
@@ -64,6 +92,34 @@ Differences are clipnet - ref_model with 95% paired SNP-bootstrap CIs (SNPs resa
 | tiqtl | epochs100 | fold-0 ensemble | window_e005-e015 | 0.598 | 0.647 | -0.049 | -0.081 | -0.018 | 0.002 | 5.000 |
 | tiqtl | epochs100 | within-fold Spearman | window_e005-e015 | 0.606 | 0.622 | -0.016 | -0.043 | 0.011 | 0.246 | 5.000 |
 | tiqtl | epochs100 | within-fold Spearman | coverage | window_e005-e015 | 0.529 | 0.521 | 0.009 | -0.023 | 0.040 | 0.597 | 7.000 |
+| tiqtl | epochs100_noes | legacy composite (manuscript) | mean_over_epochs | 0.362 | 0.247 | 0.115 | 0.103 | 0.128 | 0.000 | nan |
+| tiqtl | epochs100_noes | fold-0 ensemble | mean_over_epochs | 0.570 | 0.575 | -0.005 | -0.031 | 0.021 | 0.701 | nan |
+| tiqtl | epochs100_noes | within-fold Spearman | mean_over_epochs | 0.556 | 0.459 | 0.097 | 0.082 | 0.113 | 0.000 | nan |
+| tiqtl | epochs100_noes | within-fold Spearman | coverage | mean_over_epochs | 0.397 | 0.322 | 0.075 | 0.055 | 0.096 | 0.000 | nan |
+| tiqtl | epochs100_noes | legacy composite (manuscript) | window_e005-e015 | 0.582 | 0.589 | -0.007 | -0.032 | 0.018 | 0.583 | 5.000 |
+| tiqtl | epochs100_noes | fold-0 ensemble | window_e005-e015 | 0.598 | 0.661 | -0.063 | -0.094 | -0.034 | 0.000 | 5.000 |
+| tiqtl | epochs100_noes | within-fold Spearman | window_e005-e015 | 0.606 | 0.621 | -0.015 | -0.040 | 0.010 | 0.233 | 5.000 |
+| tiqtl | epochs100_noes | within-fold Spearman | coverage | window_e005-e015 | 0.529 | 0.538 | -0.009 | -0.037 | 0.020 | 0.553 | 4.000 |
+| tiqtl | epochs100_noes | legacy composite (manuscript) | window_e005-e025 | 0.533 | 0.589 | -0.056 | -0.083 | -0.030 | 0.000 | 4.000 |
+| tiqtl | epochs100_noes | fold-0 ensemble | window_e005-e025 | 0.583 | 0.640 | -0.058 | -0.085 | -0.032 | 0.000 | 4.000 |
+| tiqtl | epochs100_noes | within-fold Spearman | window_e005-e025 | 0.595 | 0.625 | -0.030 | -0.055 | -0.005 | 0.019 | 4.000 |
+| tiqtl | epochs100_noes | within-fold Spearman | coverage | window_e005-e025 | 0.534 | 0.542 | -0.007 | -0.035 | 0.021 | 0.597 | 4.000 |
+| tiqtl | epochs100_noes | legacy composite (manuscript) | window_e005-e100 | 0.527 | 0.461 | 0.066 | 0.041 | 0.092 | 0.000 | 6.000 |
+| tiqtl | epochs100_noes | fold-0 ensemble | window_e005-e100 | 0.559 | 0.556 | 0.003 | -0.030 | 0.037 | 0.862 | 6.000 |
+| tiqtl | epochs100_noes | within-fold Spearman | window_e005-e100 | 0.572 | 0.480 | 0.092 | 0.062 | 0.120 | 0.000 | 6.000 |
+| tiqtl | epochs100_noes | within-fold Spearman | coverage | window_e005-e100 | 0.487 | 0.424 | 0.064 | 0.034 | 0.094 | 0.000 | 7.000 |
+| tiqtl | epochs100_noes | legacy composite (manuscript) | window_e030-e050 | 0.488 | 0.459 | 0.029 | -0.011 | 0.065 | 0.141 | 6.000 |
+| tiqtl | epochs100_noes | fold-0 ensemble | window_e030-e050 | 0.570 | 0.586 | -0.016 | -0.049 | 0.017 | 0.346 | 6.000 |
+| tiqtl | epochs100_noes | within-fold Spearman | window_e030-e050 | 0.588 | 0.504 | 0.084 | 0.052 | 0.116 | 0.000 | 6.000 |
+| tiqtl | epochs100_noes | within-fold Spearman | coverage | window_e030-e050 | 0.485 | 0.444 | 0.042 | 0.008 | 0.076 | 0.016 | 4.000 |
+| tiqtl | epochs100_noes | legacy composite (manuscript) | window_e055-e075 | 0.497 | 0.388 | 0.109 | 0.074 | 0.144 | 0.000 | 6.000 |
+| tiqtl | epochs100_noes | fold-0 ensemble | window_e055-e075 | 0.527 | 0.511 | 0.015 | -0.020 | 0.053 | 0.387 | 6.000 |
+| tiqtl | epochs100_noes | within-fold Spearman | window_e055-e075 | 0.524 | 0.410 | 0.115 | 0.081 | 0.148 | 0.000 | 6.000 |
+| tiqtl | epochs100_noes | within-fold Spearman | coverage | window_e055-e075 | 0.423 | 0.365 | 0.058 | 0.023 | 0.093 | 0.001 | 8.000 |
+| tiqtl | epochs100_noes | legacy composite (manuscript) | window_e080-e100 | 0.469 | 0.383 | 0.087 | 0.053 | 0.122 | 0.000 | 6.000 |
+| tiqtl | epochs100_noes | fold-0 ensemble | window_e080-e100 | 0.561 | 0.528 | 0.034 | -0.014 | 0.087 | 0.173 | 6.000 |
+| tiqtl | epochs100_noes | within-fold Spearman | window_e080-e100 | 0.562 | 0.468 | 0.094 | 0.060 | 0.127 | 0.000 | 6.000 |
+| tiqtl | epochs100_noes | within-fold Spearman | coverage | window_e080-e100 | 0.441 | 0.380 | 0.061 | 0.025 | 0.096 | 0.001 | 7.000 |
 | tiqtl | epochs20 | legacy composite (manuscript) | mean_over_epochs | 0.327 | 0.345 | -0.018 | -0.033 | -0.004 | 0.016 | nan |
 | tiqtl | epochs20 | fold-0 ensemble | mean_over_epochs | 0.616 | 0.666 | -0.050 | -0.080 | -0.026 | 0.000 | nan |
 | tiqtl | epochs20 | within-fold Spearman | mean_over_epochs | 0.551 | 0.568 | -0.017 | -0.030 | -0.004 | 0.014 | nan |
@@ -106,6 +162,27 @@ Differences are clipnet - ref_model with 95% paired SNP-bootstrap CIs (SNPs resa
 | diqtl | epochs100 | within-fold Pearson | window_e005-e015 | 0.642 | 0.665 | -0.024 | -0.051 | 0.004 | 0.089 | 4.000 |
 | diqtl | epochs100 | shape-only (within-fold Pearson) | window_e005-e015 | 0.234 | 0.238 | -0.004 | -0.040 | 0.031 | 0.802 | 3.000 |
 | diqtl | epochs100 | expression-only baseline | window_e005-e015 | 0.714 | 0.695 | 0.019 | -0.004 | 0.039 | 0.099 | 6.000 |
+| diqtl | epochs100_noes | within-fold Pearson | mean_over_epochs | 0.593 | 0.500 | 0.093 | 0.069 | 0.117 | 0.000 | nan |
+| diqtl | epochs100_noes | shape-only (within-fold Pearson) | mean_over_epochs | 0.293 | 0.266 | 0.026 | -0.005 | 0.060 | 0.104 | nan |
+| diqtl | epochs100_noes | expression-only baseline | mean_over_epochs | 0.668 | 0.605 | 0.063 | 0.050 | 0.080 | 0.000 | nan |
+| diqtl | epochs100_noes | within-fold Pearson | window_e005-e015 | 0.642 | 0.677 | -0.035 | -0.061 | -0.008 | 0.010 | 3.000 |
+| diqtl | epochs100_noes | shape-only (within-fold Pearson) | window_e005-e015 | 0.234 | 0.202 | 0.032 | -0.009 | 0.076 | 0.123 | 6.000 |
+| diqtl | epochs100_noes | expression-only baseline | window_e005-e015 | 0.714 | 0.721 | -0.006 | -0.024 | 0.012 | 0.493 | 4.000 |
+| diqtl | epochs100_noes | within-fold Pearson | window_e005-e025 | 0.627 | 0.688 | -0.061 | -0.085 | -0.035 | 0.000 | 1.000 |
+| diqtl | epochs100_noes | shape-only (within-fold Pearson) | window_e005-e025 | 0.270 | 0.208 | 0.061 | 0.022 | 0.102 | 0.002 | 7.000 |
+| diqtl | epochs100_noes | expression-only baseline | window_e005-e025 | 0.716 | 0.725 | -0.009 | -0.026 | 0.008 | 0.299 | 4.000 |
+| diqtl | epochs100_noes | within-fold Pearson | window_e005-e100 | 0.617 | 0.555 | 0.062 | 0.031 | 0.094 | 0.000 | 6.000 |
+| diqtl | epochs100_noes | shape-only (within-fold Pearson) | window_e005-e100 | 0.338 | 0.307 | 0.031 | -0.010 | 0.073 | 0.133 | 6.000 |
+| diqtl | epochs100_noes | expression-only baseline | window_e005-e100 | 0.738 | 0.722 | 0.016 | 0.002 | 0.031 | 0.025 | 7.000 |
+| diqtl | epochs100_noes | within-fold Pearson | window_e030-e050 | 0.647 | 0.571 | 0.077 | 0.042 | 0.113 | 0.000 | 6.000 |
+| diqtl | epochs100_noes | shape-only (within-fold Pearson) | window_e030-e050 | 0.333 | 0.253 | 0.080 | 0.032 | 0.129 | 0.001 | 8.000 |
+| diqtl | epochs100_noes | expression-only baseline | window_e030-e050 | 0.738 | 0.699 | 0.039 | 0.022 | 0.057 | 0.000 | 7.000 |
+| diqtl | epochs100_noes | within-fold Pearson | window_e055-e075 | 0.569 | 0.485 | 0.084 | 0.042 | 0.126 | 0.000 | 7.000 |
+| diqtl | epochs100_noes | shape-only (within-fold Pearson) | window_e055-e075 | 0.345 | 0.313 | 0.032 | -0.013 | 0.078 | 0.163 | 6.000 |
+| diqtl | epochs100_noes | expression-only baseline | window_e055-e075 | 0.731 | 0.709 | 0.022 | 0.006 | 0.039 | 0.007 | 8.000 |
+| diqtl | epochs100_noes | within-fold Pearson | window_e080-e100 | 0.607 | 0.501 | 0.106 | 0.057 | 0.155 | 0.000 | 6.000 |
+| diqtl | epochs100_noes | shape-only (within-fold Pearson) | window_e080-e100 | 0.336 | 0.355 | -0.019 | -0.065 | 0.025 | 0.396 | 3.000 |
+| diqtl | epochs100_noes | expression-only baseline | window_e080-e100 | 0.735 | 0.716 | 0.020 | 0.001 | 0.038 | 0.040 | 6.000 |
 | diqtl | epochs20 | within-fold Pearson | mean_over_epochs | 0.610 | 0.610 | -0.000 | -0.014 | 0.013 | 0.960 | nan |
 | diqtl | epochs20 | shape-only (within-fold Pearson) | mean_over_epochs | 0.222 | 0.227 | -0.004 | -0.030 | 0.022 | 0.748 | nan |
 | diqtl | epochs20 | expression-only baseline | mean_over_epochs | 0.636 | 0.634 | 0.002 | -0.011 | 0.015 | 0.790 | nan |
@@ -136,6 +213,27 @@ Differences are clipnet - ref_model with 95% paired SNP-bootstrap CIs (SNPs resa
 | tiqtl | epochs100 | within-fold Pearson | window_e005-e015 | 0.604 | 0.616 | -0.013 | -0.037 | 0.012 | 0.318 | 5.000 |
 | tiqtl | epochs100 | shape-only (within-fold Pearson) | window_e005-e015 | 0.199 | 0.193 | 0.006 | -0.024 | 0.034 | 0.741 | 5.000 |
 | tiqtl | epochs100 | expression-only baseline | window_e005-e015 | 0.661 | 0.666 | -0.005 | -0.020 | 0.009 | 0.475 | 3.000 |
+| tiqtl | epochs100_noes | within-fold Pearson | mean_over_epochs | 0.533 | 0.445 | 0.088 | 0.073 | 0.105 | 0.000 | nan |
+| tiqtl | epochs100_noes | shape-only (within-fold Pearson) | mean_over_epochs | 0.281 | 0.270 | 0.012 | -0.012 | 0.036 | 0.318 | nan |
+| tiqtl | epochs100_noes | expression-only baseline | mean_over_epochs | 0.617 | 0.547 | 0.070 | 0.060 | 0.083 | 0.000 | nan |
+| tiqtl | epochs100_noes | within-fold Pearson | window_e005-e015 | 0.604 | 0.617 | -0.013 | -0.036 | 0.010 | 0.274 | 5.000 |
+| tiqtl | epochs100_noes | shape-only (within-fold Pearson) | window_e005-e015 | 0.199 | 0.181 | 0.017 | -0.014 | 0.049 | 0.265 | 6.000 |
+| tiqtl | epochs100_noes | expression-only baseline | window_e005-e015 | 0.661 | 0.673 | -0.012 | -0.025 | 0.001 | 0.078 | 4.000 |
+| tiqtl | epochs100_noes | within-fold Pearson | window_e005-e025 | 0.594 | 0.621 | -0.027 | -0.049 | -0.005 | 0.019 | 4.000 |
+| tiqtl | epochs100_noes | shape-only (within-fold Pearson) | window_e005-e025 | 0.229 | 0.186 | 0.043 | 0.014 | 0.073 | 0.004 | 6.000 |
+| tiqtl | epochs100_noes | expression-only baseline | window_e005-e025 | 0.668 | 0.677 | -0.009 | -0.021 | 0.003 | 0.144 | 4.000 |
+| tiqtl | epochs100_noes | within-fold Pearson | window_e005-e100 | 0.561 | 0.480 | 0.081 | 0.056 | 0.107 | 0.000 | 6.000 |
+| tiqtl | epochs100_noes | shape-only (within-fold Pearson) | window_e005-e100 | 0.318 | 0.301 | 0.017 | -0.014 | 0.048 | 0.272 | 5.000 |
+| tiqtl | epochs100_noes | expression-only baseline | window_e005-e100 | 0.686 | 0.670 | 0.016 | 0.005 | 0.027 | 0.006 | 6.000 |
+| tiqtl | epochs100_noes | within-fold Pearson | window_e030-e050 | 0.563 | 0.507 | 0.056 | 0.023 | 0.092 | 0.001 | 6.000 |
+| tiqtl | epochs100_noes | shape-only (within-fold Pearson) | window_e030-e050 | 0.319 | 0.260 | 0.059 | 0.023 | 0.094 | 0.001 | 6.000 |
+| tiqtl | epochs100_noes | expression-only baseline | window_e030-e050 | 0.684 | 0.646 | 0.038 | 0.024 | 0.052 | 0.000 | 8.000 |
+| tiqtl | epochs100_noes | within-fold Pearson | window_e055-e075 | 0.511 | 0.405 | 0.106 | 0.076 | 0.136 | 0.000 | 6.000 |
+| tiqtl | epochs100_noes | shape-only (within-fold Pearson) | window_e055-e075 | 0.325 | 0.326 | -0.000 | -0.034 | 0.033 | 0.999 | 3.000 |
+| tiqtl | epochs100_noes | expression-only baseline | window_e055-e075 | 0.676 | 0.659 | 0.017 | 0.004 | 0.030 | 0.011 | 6.000 |
+| tiqtl | epochs100_noes | within-fold Pearson | window_e080-e100 | 0.549 | 0.460 | 0.090 | 0.060 | 0.120 | 0.000 | 6.000 |
+| tiqtl | epochs100_noes | shape-only (within-fold Pearson) | window_e080-e100 | 0.326 | 0.334 | -0.009 | -0.042 | 0.025 | 0.638 | 5.000 |
+| tiqtl | epochs100_noes | expression-only baseline | window_e080-e100 | 0.685 | 0.658 | 0.027 | 0.013 | 0.041 | 0.000 | 8.000 |
 | tiqtl | epochs20 | within-fold Pearson | mean_over_epochs | 0.542 | 0.560 | -0.018 | -0.030 | -0.006 | 0.005 | nan |
 | tiqtl | epochs20 | shape-only (within-fold Pearson) | mean_over_epochs | 0.198 | 0.205 | -0.008 | -0.027 | 0.011 | 0.411 | nan |
 | tiqtl | epochs20 | expression-only baseline | mean_over_epochs | 0.589 | 0.591 | -0.002 | -0.013 | 0.007 | 0.613 | nan |
@@ -168,6 +266,8 @@ Fraction of held-out SNPs whose predicted L2 is exactly 0 because the ReLU count
 | diqtl | best_model | ref_model | 9 | 0.179 | 0.222 | 0 |
 | diqtl | epochs100 | clipnet | 180 | 0.189 | 0.150 | 2 |
 | diqtl | epochs100 | ref_model | 61 | 0.289 | 0.328 | 2 |
+| diqtl | epochs100_noes | clipnet | 180 | 0.189 | 0.150 | 2 |
+| diqtl | epochs100_noes | ref100_ref_model | 180 | 0.337 | 0.367 | 14 |
 | diqtl | epochs20 | clipnet | 180 | 0.271 | 0.283 | 0 |
 | diqtl | epochs20 | ref_model | 180 | 0.261 | 0.272 | 5 |
 | diqtl | main | clipnet | 9 | 0.003 | 0.000 | 0 |
@@ -176,6 +276,8 @@ Fraction of held-out SNPs whose predicted L2 is exactly 0 because the ReLU count
 | tiqtl | best_model | ref_model | 9 | 0.188 | 0.222 | 0 |
 | tiqtl | epochs100 | clipnet | 180 | 0.217 | 0.206 | 2 |
 | tiqtl | epochs100 | ref_model | 61 | 0.323 | 0.393 | 2 |
+| tiqtl | epochs100_noes | clipnet | 180 | 0.217 | 0.206 | 2 |
+| tiqtl | epochs100_noes | ref100_ref_model | 180 | 0.365 | 0.400 | 13 |
 | tiqtl | epochs20 | clipnet | 180 | 0.295 | 0.306 | 2 |
 | tiqtl | epochs20 | ref_model | 180 | 0.288 | 0.311 | 5 |
 | tiqtl | main | clipnet | 9 | 0.001 | 0.000 | 0 |
@@ -185,5 +287,7 @@ Fraction of held-out SNPs whose predicted L2 is exactly 0 because the ReLU count
 
 ![diqtl_epochs20_epochs.png](diqtl_epochs20_epochs.png)
 ![diqtl_epochs100_epochs.png](diqtl_epochs100_epochs.png)
+![diqtl_epochs100_noes_epochs.png](diqtl_epochs100_noes_epochs.png)
 ![tiqtl_epochs20_epochs.png](tiqtl_epochs20_epochs.png)
 ![tiqtl_epochs100_epochs.png](tiqtl_epochs100_epochs.png)
+![tiqtl_epochs100_noes_epochs.png](tiqtl_epochs100_noes_epochs.png)

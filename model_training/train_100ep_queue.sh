@@ -31,6 +31,11 @@ for fold in {1..9}; do
     claim="${OUT_ROOT}/.claims/f${fold}"
     mkdir "${claim}" 2>/dev/null || continue
     echo "${WORKER} $(date -Is)" > "${claim}/worker"
+    # Array task indices don't match folds; show the fold in squeue.
+    if [[ -n "${SLURM_JOB_ID:-}" ]]; then
+        scontrol update JobId="${SLURM_JOB_ID}" JobName="${SLURM_JOB_NAME:-job}_f${fold}" \
+            || echo "[${WORKER}] could not rename job to include fold ${fold}"
+    fi
 
     model_dir="${OUT_ROOT}/f${fold}"
     mkdir -p "${model_dir}"
