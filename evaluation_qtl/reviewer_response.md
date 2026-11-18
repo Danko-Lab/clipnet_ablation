@@ -53,7 +53,6 @@ A limitation of our comparison is that the architecture and training hyperparame
 Open items before this goes out. The 20-epoch retraining runs are excluded: they had not converged and do not reflect how either model is trained.
 
 - [ ] **Scoring correction: disclosed (decided).** At acceptance, upload the corrected `qtl_analysis.tar.gz` fold tables (evaluation_qtl/nonretraining_results/corrected_qtl/) as a new Zenodo version.
-- [ ] **Unmentioned retrain results.** The best-checkpoint retrains favour CLIPNET on the manuscript metric (+0.075 tiQTL, +0.064 diQTL), but CLIPNET-ref leads on within-fold Spearman (−0.040, −0.059). These runs are not in the response or the supplementary figure; decide whether to mention them.
 - [ ] **Check CLIPNET-ref values against the manuscript.** 0.372 / 0.419 come from the paper's own ref prediction tables, which match our rerun; confirm they match the reported text.
 - [ ] **Swapped axes in the published CLIPNET-ref tiQTL scatter?** plot_reference_tiqtl.ipynb plots predicted values on the x-axis but labels it "Observed" (the diQTL notebook is correct). If that panel is in the manuscript, replace it with the corrected figure.
 - [ ] **Fill placeholders.** Reviewer and comment numbers, [Fig. X / Table X], and [Supplementary Fig. SX] (response text and legends).
