@@ -1,6 +1,6 @@
 # CLIPNET QTL reviewer response
 
-Nov 4, 2026 · last updated Nov 16, 2026
+Nov 4, 2026 · last updated Nov 18, 2026
 
 ## Response to Reviewer \[X\], comment \[Y\]
 
@@ -42,12 +42,20 @@ Selecting each fold model's checkpoint by validation loss, as for the published 
 
 A limitation of our comparison is that the architecture and training hyperparameters were optimized for CLIPNET and applied unchanged to CLIPNET-ref. On some folds, CLIPNET-ref's count head predicted zero signal for a large fraction of QTL loci, suggesting that CLIPNET-ref may benefit from different regularization or optimization settings. Although CLIPNET's advantage held under calibration-robust metrics and when these folds were excluded, we cannot rule out that a separately optimized reference-genome model would narrow the gap. Training CLIPNET-ref for 100 epochs without early stopping widened it. QTL benchmark performance also varied substantially between training checkpoints, so comparisons between individual models should be interpreted with this variability in mind.
 
+## Figure legends
+
+**[Fig. X], corrected.** Predicted versus observed QTL effects for the published models. Each point is a SNP; axes show log10(L2 + 10⁻³) of the difference between homozygous allele tracks, coloured by point density. SNPs held out by fold models 1–9 are predicted by the model that held them out; the remaining SNPs are predicted by the 9-model ensemble. (a) CLIPNET, tiQTLs (n = 2,057; Pearson r = 0.460). (b) CLIPNET-ref, tiQTLs (r = 0.372). (c) CLIPNET, diQTLs (n = 1,207; r = 0.531). (d) CLIPNET-ref, diQTLs (r = 0.419). Dashed line, y = x. CLIPNET-ref SNPs at −3 are loci where its count head predicts zero signal.
+
+**[Supplementary Fig. SX]. QTL performance across training checkpoints.** CLIPNET and CLIPNET-ref were retrained for 20 epochs (a checkpoint every epoch) and for 100 epochs without early stopping (every 5 epochs). (a–h) For tiQTLs (a–d) and diQTLs (e–h): the composite log-L2 Pearson correlation used in the main text, and the within-fold Spearman correlation after regressing out log observed coverage. Shading, 95% paired SNP-bootstrap CIs; dashed lines, the published models. (i–l) Mean fraction of held-out SNPs whose predicted L2 is exactly zero because the ReLU count head outputs zero for every individual.
+
 ## Notes before sending
 
-Three decisions remain before this goes out.
+Five items remain before this goes out.
 
-- [ ] **Disclose the scoring correction?** It is the one place the response contradicts the manuscript. Recommended: the corrected numbers still support the claim, and anyone rerunning the Zenodo archive would find the discrepancy. The Zenodo `qtl_analysis.tar.gz` fold tables would also need regenerating.
+- [ ] **Disclose the scoring correction?** It is the one place the response contradicts the manuscript. Recommended: the corrected numbers still support the claim, and anyone rerunning the Zenodo archive would find the discrepancy. The Zenodo `qtl_analysis.tar.gz` fold tables would also need replacing; corrected tables are in evaluation_qtl/nonretraining_results/corrected_qtl/.
 - [ ] **Unmentioned retrain results.** The best-checkpoint retrains favour CLIPNET on the manuscript metric (+0.075 tiQTL, +0.064 diQTL), but CLIPNET-ref leads on within-fold Spearman (−0.040, −0.059). In the 20-epoch runs the fold-0 ensemble also favours CLIPNET-ref on tiQTL. The supplementary figure will show these, so the text must not contradict it.
 - [ ] **Check CLIPNET-ref values against the manuscript.** 0.372 / 0.419 come from the paper's own ref prediction tables, which match our rerun; confirm they match the reported text.
+- [ ] **Swapped axes in the published CLIPNET-ref tiQTL scatter?** plot_reference_tiqtl.ipynb plots predicted values on the x-axis but labels it "Observed" (the diQTL notebook is correct). If that panel is in the manuscript, replace it with the corrected figure.
+- [ ] **Fill placeholders.** Reviewer and comment numbers, [Fig. X / Table X], and [Supplementary Fig. SX] (response text and legends).
 
 All numbers are from `evaluation_qtl/nonretraining_results/` (branch qtl-checkpoint-supp-figure).
