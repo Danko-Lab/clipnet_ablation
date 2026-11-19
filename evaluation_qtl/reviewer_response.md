@@ -44,9 +44,17 @@ A limitation of our comparison is that the architecture and training hyperparame
 
 ## Figure legends
 
+![Corrected composite QTL scatter plots](nonretraining_results/corrected_qtl/corrected_composite_l2.png)
+
+PDF: [all panels](nonretraining_results/corrected_qtl/corrected_composite_l2.pdf) · single panels: [a](nonretraining_results/corrected_qtl/tiqtl_clipnet_composite_l2.pdf), [b](nonretraining_results/corrected_qtl/tiqtl_clipnet_ref_composite_l2.pdf), [c](nonretraining_results/corrected_qtl/diqtl_clipnet_composite_l2.pdf), [d](nonretraining_results/corrected_qtl/diqtl_clipnet_ref_composite_l2.pdf)
+
 **\[Fig. X\], corrected.** Predicted versus observed QTL effects for the published models. Each point is a SNP; axes show log10(L2 + 10⁻³) of the difference between homozygous allele tracks, coloured by point density. SNPs held out by fold models 1–9 are predicted by the model that held them out; the remaining SNPs are predicted by the 9-model ensemble. (a) CLIPNET, tiQTLs (n = 2,057; Pearson r = 0.460). (b) CLIPNET-ref, tiQTLs (r = 0.372). (c) CLIPNET, diQTLs (n = 1,207; r = 0.531). (d) CLIPNET-ref, diQTLs (r = 0.419). Dashed line, y = x. CLIPNET-ref SNPs at −3 are loci where its count head predicts zero signal.
 
 **\[Supplementary Fig. SX\]. QTL performance across training checkpoints.** CLIPNET and CLIPNET-ref were retrained for 100 epochs without early stopping, retaining a checkpoint every 5 epochs. (a, b) Composite log-L2 Pearson correlation used in the main text, for tiQTLs (a) and diQTLs (b). (c, d) Within-fold Spearman correlation after regressing out log observed coverage. Shading, 95% paired SNP-bootstrap CIs; dashed lines, the published models. (e, f) Mean fraction of held-out SNPs whose predicted L2 is exactly zero because the ReLU count head outputs zero for every individual.
+
+![Supplementary figure: QTL performance across training checkpoints](nonretraining_results/supp_fig_checkpoints.png)
+
+PDF: [supp_fig_checkpoints.pdf](nonretraining_results/supp_fig_checkpoints.pdf)
 
 ## Notes before sending
 
