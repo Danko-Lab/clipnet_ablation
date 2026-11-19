@@ -1,6 +1,6 @@
 # CLIPNET QTL reviewer response
 
-Nov 4, 2026 · last updated Nov 18, 2026
+Nov 4, 2026
 
 ## Response to Reviewer \[X\], comment \[Y\]
 
@@ -44,9 +44,9 @@ A limitation of our comparison is that the architecture and training hyperparame
 
 ## Figure legends
 
-**[Fig. X], corrected.** Predicted versus observed QTL effects for the published models. Each point is a SNP; axes show log10(L2 + 10⁻³) of the difference between homozygous allele tracks, coloured by point density. SNPs held out by fold models 1–9 are predicted by the model that held them out; the remaining SNPs are predicted by the 9-model ensemble. (a) CLIPNET, tiQTLs (n = 2,057; Pearson r = 0.460). (b) CLIPNET-ref, tiQTLs (r = 0.372). (c) CLIPNET, diQTLs (n = 1,207; r = 0.531). (d) CLIPNET-ref, diQTLs (r = 0.419). Dashed line, y = x. CLIPNET-ref SNPs at −3 are loci where its count head predicts zero signal.
+**\[Fig. X\], corrected.** Predicted versus observed QTL effects for the published models. Each point is a SNP; axes show log10(L2 + 10⁻³) of the difference between homozygous allele tracks, coloured by point density. SNPs held out by fold models 1–9 are predicted by the model that held them out; the remaining SNPs are predicted by the 9-model ensemble. (a) CLIPNET, tiQTLs (n = 2,057; Pearson r = 0.460). (b) CLIPNET-ref, tiQTLs (r = 0.372). (c) CLIPNET, diQTLs (n = 1,207; r = 0.531). (d) CLIPNET-ref, diQTLs (r = 0.419). Dashed line, y = x. CLIPNET-ref SNPs at −3 are loci where its count head predicts zero signal.
 
-**[Supplementary Fig. SX]. QTL performance across training checkpoints.** CLIPNET and CLIPNET-ref were retrained for 100 epochs without early stopping, retaining a checkpoint every 5 epochs. (a, b) Composite log-L2 Pearson correlation used in the main text, for tiQTLs (a) and diQTLs (b). (c, d) Within-fold Spearman correlation after regressing out log observed coverage. Shading, 95% paired SNP-bootstrap CIs; dashed lines, the published models. (e, f) Mean fraction of held-out SNPs whose predicted L2 is exactly zero because the ReLU count head outputs zero for every individual.
+**\[Supplementary Fig. SX\]. QTL performance across training checkpoints.** CLIPNET and CLIPNET-ref were retrained for 100 epochs without early stopping, retaining a checkpoint every 5 epochs. (a, b) Composite log-L2 Pearson correlation used in the main text, for tiQTLs (a) and diQTLs (b). (c, d) Within-fold Spearman correlation after regressing out log observed coverage. Shading, 95% paired SNP-bootstrap CIs; dashed lines, the published models. (e, f) Mean fraction of held-out SNPs whose predicted L2 is exactly zero because the ReLU count head outputs zero for every individual.
 
 ## Notes before sending
 
@@ -55,6 +55,6 @@ Open items before this goes out. The 20-epoch retraining runs are excluded: they
 - [ ] **Scoring correction: disclosed (decided).** At acceptance, upload the corrected `qtl_analysis.tar.gz` fold tables (evaluation_qtl/nonretraining_results/corrected_qtl/) as a new Zenodo version.
 - [ ] **Check CLIPNET-ref values against the manuscript.** 0.372 / 0.419 come from the paper's own ref prediction tables, which match our rerun; confirm they match the reported text.
 - [ ] **Swapped axes in the published CLIPNET-ref tiQTL scatter?** plot_reference_tiqtl.ipynb plots predicted values on the x-axis but labels it "Observed" (the diQTL notebook is correct). If that panel is in the manuscript, replace it with the corrected figure.
-- [ ] **Fill placeholders.** Reviewer and comment numbers, [Fig. X / Table X], and [Supplementary Fig. SX] (response text and legends).
+- [ ] **Fill placeholders.** Reviewer and comment numbers, \[Fig. X / Table X\], and \[Supplementary Fig. SX\] (response text and legends).
 
 All numbers are from `evaluation_qtl/nonretraining_results/` (branch dev).
